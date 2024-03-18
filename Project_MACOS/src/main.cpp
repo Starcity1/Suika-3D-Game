@@ -11,6 +11,8 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include "util.h"
+
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -240,20 +242,15 @@ void scaleToUnitBox(void)
     myObject.bBox.vSize[2] = vBoxSize[2] * modelScale;
 }
 
+// TODO: Modify function to load all objects.
 int LoadInput()
 {
     /////////////////////////////////////////////////////
     // 1. Open the input file
 
     // Input file name
-    string inputString;
 
-    //taking from standard input
-    cout << "Please enter filename.obj: ";
-    cin >> inputString;
-    cout << "Displaying: " << inputString <<endl;
-
-    ifstream myfile(inputString);
+    ifstream myfile(PLATFORM_PATH);
 
     if (myfile.is_open() == false)
     {
@@ -652,7 +649,7 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 ///                                      Main Function
 ///=========================================================================================///
 
-int main(int argc, char* argv[])
+int main()
 {
     // glfw: initialize and configure
     // ------------------------------
@@ -690,13 +687,6 @@ int main(int argc, char* argv[])
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
-    }
-
-    // Getting input from user if given ::
-    string texture_path = "../data/texture.png";
-    if (argc > 1)
-    {
-        texture_path = string(argv[1]);
     }
 
     // configure global opengl state
@@ -758,7 +748,7 @@ int main(int argc, char* argv[])
 
     int width, height, nrChannels;
     // TODO Change back to ../data/textures.png
-    unsigned char *data = stbi_load(texture_path.c_str(), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("../data/texture_scene.png", &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.

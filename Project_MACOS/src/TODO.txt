@@ -1,0 +1,6 @@
+- Change camera's movement to translate across platform (maybe change controls to basic wasd?)
+- Modify background to be more lively
+    - Find a texture for the background
+- Find a texture suited for the platform
+- Research how to add music using GLFW modules
+- Start creating rigid objects and a basic physics engine
