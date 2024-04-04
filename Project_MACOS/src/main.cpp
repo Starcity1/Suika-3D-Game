@@ -21,6 +21,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 #include <fstream>
@@ -69,6 +70,10 @@ glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 float camera_fovy = 45.0f;
 glm::mat4 projection;
+float cameraSpeed = 0.05f;
+
+float delta_time = 0.0f; // Time between current frame and last frame
+float last_frame = 0.0f; // Time of last frame
 
 // Mouse interaction
 bool leftMouseButtonHold = false;
@@ -76,6 +81,7 @@ bool isFirstMouse = true;
 float prevMouseX;
 float prevMouseY;
 glm::mat4 modelMatrix = glm::mat4(1.0f);
+unordered_map<int, bool> keys;
 
 // Vectors to save mesh data
 vector<float> render_ver_nor_tex;       // List of points and normals for rendering
@@ -89,6 +95,9 @@ unsigned int VBO, VAO,EBO;
 
 
 // declaration
+void RotateModel(float angle, glm::vec3 axis);
+void TranslateModel(glm::vec3 transVec);
+void ScaleModel(float scale);
 void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -105,7 +114,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 ///=========================================================================================///
 
 
-//// TODO: fill this function to realize plane mapping
 void calcPlaneMapping(void)
 {
   // Main loop iterates through the entire set of vertices.
@@ -134,7 +142,6 @@ void calcPlaneMapping(void)
 }
 
 
-//// TODO: fill this function to realize cylindrical mapping
 void calcCylindricalMapping(void)
 { 
   for(auto& vertex : myObject.vertices)
@@ -155,7 +162,6 @@ void calcCylindricalMapping(void)
 }
 
 
-//// TODO: fill this function to realize sphere mapping
 void calcSphereMapping(void)
 {
    for(auto& vertex : myObject.vertices)
@@ -181,7 +187,21 @@ void calcSphereMapping(void)
    }
 }
 
+void calcUVMapping(void)
+{
+    for(auto& vertex : myObject.vertices)
+    {
+        float dx = vertex.v[0];
+        float dy = vertex.v[1];
+        float dz = vertex.v[2];
 
+        float u = 0.5f - glm::atan(dz, dx) / (2 * M_PI);
+        float v = 0.5 + glm::acos(dy) / PI;
+
+        vertex.t[0] = u;
+        vertex.t[1] = v;
+    }
+}
 
 
 ///=========================================================================================///
@@ -250,7 +270,7 @@ int LoadInput()
 
     // Input file name
 
-    ifstream myfile(PLATFORM_PATH);
+    ifstream myfile("../data/sphere.obj");
 
     if (myfile.is_open() == false)
     {
@@ -329,7 +349,7 @@ int LoadInput()
     myfile.close();
 
     //checking and transfer
-    cout<<"number of vertexes " <<vecv.size()<<endl;
+    cout<<"number of vertices " <<vecv.size()<<endl;
     cout<<"number of normals " <<vecn.size()<<endl;
     cout<<"number of triangle faces " <<vecf.size()<<endl;
 
@@ -412,6 +432,7 @@ int LoadInput()
     return 0;
 }
 
+//TODO: Modify function such that ALL objects can be
 bool CreateRenderData()
 {
     if (0 == myObject.vertices.size())
@@ -451,11 +472,45 @@ bool CreateRenderData()
 }
 
 
+///=====================================================///
+///         Functions for Moving Camera
+///=====================================================///
 
+void update_camera_position(GLFWwindow* window)
+{
+    float currentFrame = glfwGetTime();
+    delta_time = currentFrame - last_frame;
+    last_frame = currentFrame;
 
-///=========================================================================================///
-///                            Functions for Manipulating 3D Model  
-///=========================================================================================///
+    float cameraSpeedMultiplier = cameraSpeed * delta_time;
+
+    if (keys[GLFW_KEY_W]) {
+        camera_position += cameraSpeedMultiplier * camera_target;
+    }
+    if (keys[GLFW_KEY_S]) {
+        camera_position -= cameraSpeedMultiplier * camera_target;
+    }
+    if (keys[GLFW_KEY_A]) {
+        camera_position -= glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
+    }
+    if (keys[GLFW_KEY_D]) {
+        camera_position += glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
+    }
+}
+
+///=====================================================///
+///         Functions for Manipulating 3D Model  
+///=====================================================///
+
+void activate_gravity(GLFWwindow* window) {
+    // Calculate time change.
+    float current_frame = glfwGetTime();
+    
+    // get current position.
+    glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame;
+
+    TranslateModel(gravity_vel_vector * .005f);
+}
 
 void RotateModel(float angle, glm::vec3 axis)
 {
@@ -523,38 +578,14 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // ----------------------------------------------------------------------
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if (key == GLFW_KEY_C && action == GLFW_PRESS)
+    // Adding key callouts for camera movement.
+    glm::vec3 trans = glm::vec3(0.0f);
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
-        calcCylindricalMapping();
-        CreateRenderData();
-
-        // load data into vertex buffers
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
-    }
-
-    if (key == GLFW_KEY_S && action == GLFW_PRESS)
+        keys[key] = true;
+    } else
     {
-        calcSphereMapping();
-        CreateRenderData();
-
-        // load data into vertex buffers
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
-
-    }
-
-    if (key == GLFW_KEY_P && action == GLFW_PRESS)
-    {
-        calcPlaneMapping();
-        CreateRenderData();
-
-        // load data into vertex buffers
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
+        keys[key] = false;
     }
 }
 
@@ -591,37 +622,23 @@ void cursor_pos_callback(GLFWwindow* window, double mouseX, double mouseY)
 
         else
         {
-            if( glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS )
-            {
-                float dx =         _TRANS_FACTOR * (mouseX - prevMouseX);
-                float dy = -1.0f * _TRANS_FACTOR * (mouseY - prevMouseY); // reversed since y-coordinates go from bottom to top
+            float dx =   mouseX - prevMouseX;
+            float dy = -(mouseY - prevMouseY); // reversed since y-coordinates go from bottom to top
 
-                prevMouseX = mouseX;
-                prevMouseY = mouseY;
+            prevMouseX = mouseX;
+            prevMouseY = mouseY;
 
-                TranslateModel( glm::vec3(dx, dy, 0) );
-            }
+            // Rotation
+            nx    = -dy;
+            ny    =  dx;
+            scale = sqrt(nx*nx + ny*ny);
 
-            else
-            {
-                float dx =   mouseX - prevMouseX;
-                float dy = -(mouseY - prevMouseY); // reversed since y-coordinates go from bottom to top
+            // We use "ArcBall Rotation" to compute the rotation axis and angle based on the mouse motion
+            nx    = nx / scale;
+            ny    = ny / scale;
+            angle = scale * _ROTATE_FACTOR;
 
-                prevMouseX = mouseX;
-                prevMouseY = mouseY;
-
-                // Rotation
-                nx    = -dy;
-                ny    =  dx;
-                scale = sqrt(nx*nx + ny*ny);
-
-                // We use "ArcBall Rotation" to compute the rotation axis and angle based on the mouse motion
-                nx    = nx / scale;
-                ny    = ny / scale;
-                angle = scale * _ROTATE_FACTOR;
-
-                RotateModel( angle, glm::vec3(nx, ny, 0.0f) );
-            }
+            RotateModel( angle, glm::vec3(nx, ny, 0.0f) );
         }
     }
 
@@ -664,7 +681,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(winWidth, winHeight, "Assignment 3", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(winWidth, winHeight, "Project", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -674,8 +691,11 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
+    // Sets mouse_button_callback() function as handler when mouse press event happens.
     glfwSetMouseButtonCallback(window, mouse_button_callback);
+    // Sets cursor_pos_callback() function as handler when press event happens.
     glfwSetCursorPosCallback(window, cursor_pos_callback);
+    // Sets scroll_callback() function as handler when scroll event happens.
     glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture the mouse
@@ -747,8 +767,9 @@ int main()
     // load image, create texture and generate mipmaps
 
     int width, height, nrChannels;
-    // TODO Change back to ../data/textures.png
-    unsigned char *data = stbi_load("../data/texture_scene.png", &width, &height, &nrChannels, 0);
+    // Change back to ../data/textures.png
+    // "../Blenders/texture_wood.png"
+    unsigned char *data = stbi_load(MELON_TEXTURE, &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -773,19 +794,49 @@ int main()
 
     // render loop
     // -----------
+
+    // Render projected texture in.
+    calcPlaneMapping();
+    CreateRenderData();
+
+    // load data into vertex buffers
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
+
+    // Boolean activating gravity.
+    bool gravityOn = false;
     while (!glfwWindowShouldClose(window))
     {
         // input
         // -----
         processInput(window);
 
-        // ------
+        // Update camera position.
+        // update_camera_position(window);
+
+        for(auto& pair : keys)
+        {
+            int key = pair.first;
+            bool pressed = pair.second;
+            // Special input to run the scene.
+            if (key == GLFW_KEY_SPACE && pressed)
+            {
+                gravityOn = true;
+            }
+        }
+        
+        if (gravityOn)
+            activate_gravity(window);
+
+        // Clear the buffer
         glClearColor(0.85f, 0.85f, 0.85f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // view/projection transformations
         projection = glm::perspective(glm::radians(camera_fovy), (float)winWidth / (float)winHeight, _Z_NEAR, _Z_FAR);
         glm::mat4 view = glm::lookAt(camera_position, camera_target, camera_up);
+
 
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "projection"), 1, GL_FALSE, &projection[0][0]);
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "view"), 1, GL_FALSE, &view[0][0]);
@@ -795,7 +846,6 @@ int main()
 
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
-        glUniform3fv(glGetUniformLocation(myShader.ID, "viewPos"), 1, &camera_position[0]);
 
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, texture);
