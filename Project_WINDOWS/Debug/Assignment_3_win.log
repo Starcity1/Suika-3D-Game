@@ -1,0 +1,129 @@
+﻿  glad.c
+  main.cpp
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\Mesh.h(338,12): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(108,25): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(126,25): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(131,29): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(133,42): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(146,25): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(152,28): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(155,42): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(156,40): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(173,40): warning C4305: '=': truncation from 'double' to 'float'
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(174,40): warning C4305: '=': truncation from 'double' to 'float'
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(323,23): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(328,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(329,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(330,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(339,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(340,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(341,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(350,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(351,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(352,44): warning C4244: '=': conversion from '_Ty' to 'T', possible loss of data
+          with
+          [
+              _Ty=unsigned int
+          ]
+          and
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(362,23): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(382,23): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(384,36): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(385,36): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(386,36): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(408,27): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(423,27): warning C4018: '<': signed/unsigned mismatch
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(568,26): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(569,26): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(577,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(578,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(580,30): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(581,30): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(588,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(589,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(591,30): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(592,30): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(560,16): warning C4101: 'dy': unreferenced local variable
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(560,12): warning C4101: 'dx': unreferenced local variable
+D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\src\main.cpp(620,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  Assignment_3_win.vcxproj -> D:\_Teaching\_50.017_Graphics_and_Visualisation_Git\Assignment\Assignment_3\Assignment_3_solution\Assignment_3_win\Debug\Assignment_3_win.exe

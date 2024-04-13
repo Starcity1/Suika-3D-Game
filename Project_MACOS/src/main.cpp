@@ -65,7 +65,7 @@ unsigned int winWidth  = 800;
 unsigned int winHeight = 600;
 
 // Camera
-glm::vec3 camera_position = glm::vec3 (0.0f, 0.0f, 3.0f);
+glm::vec3 camera_position = glm::vec3 (2.0f, 2.0f, 3.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 float camera_fovy = 45.0f;
@@ -772,7 +772,7 @@ int main()
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load(BASE_TEXTURE, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load("../data/glass.png", &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
