@@ -12,6 +12,7 @@
 
 // Texture paths.
 #define PLATFORM_PATH "../data/platform.obj"
+#define BASE_TEXTURE "../data/texture_stone.png"
 #define APPLE_TEXTURE "../Blenders/apple.png"
 #define BLUEBRRY_TEXTURE "../Blenders/blueberry.png"
 #define BOMB_TEXTURE "../Blenders/bomb.png"

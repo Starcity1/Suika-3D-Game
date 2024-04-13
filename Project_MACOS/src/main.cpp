@@ -89,6 +89,7 @@ vector<unsigned> render_f;              // List of faces for rendering
 
 //main data for rendering
 Object myObject;
+vector<Object> myObjects;
 
 // render
 unsigned int VBO, VAO,EBO;
@@ -270,7 +271,7 @@ int LoadInput()
 
     // Input file name
 
-    ifstream myfile("../data/sphere.obj");
+    ifstream myfile("../data/platform.obj");
 
     if (myfile.is_open() == false)
     {
@@ -510,6 +511,8 @@ void activate_gravity(GLFWwindow* window) {
     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame;
 
     TranslateModel(gravity_vel_vector * .005f);
+
+    cout << glm::to_string(modelMatrix) << endl;
 }
 
 void RotateModel(float angle, glm::vec3 axis)
@@ -769,7 +772,7 @@ int main()
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load(MELON_TEXTURE, &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load(BASE_TEXTURE, &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -796,7 +799,7 @@ int main()
     // -----------
 
     // Render projected texture in.
-    calcPlaneMapping();
+    calcSphereMapping();
     CreateRenderData();
 
     // load data into vertex buffers
