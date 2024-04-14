@@ -1,4 +1,0 @@
-/Users/david/Documents/School/SUTD/50_017/Project/Project_MACOS/build/CMakeFiles/GLAD.dir
-/Users/david/Documents/School/SUTD/50_017/Project/Project_MACOS/build/CMakeFiles/Project.dir
-/Users/david/Documents/School/SUTD/50_017/Project/Project_MACOS/build/CMakeFiles/edit_cache.dir
-/Users/david/Documents/School/SUTD/50_017/Project/Project_MACOS/build/CMakeFiles/rebuild_cache.dir
