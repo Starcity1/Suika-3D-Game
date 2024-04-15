@@ -1,0 +1,9 @@
+Project TODO.txt
+
+- Be able to put multiple objects within window.
+- Implement functional texture mapping for fruits and platform.
+- Create a rigid surface for platform.
+- Start implementing object collision between spheres
+- Implement fruit merging and fruit sizes.
+- implement basic game mechanics (score, scoreboard, etc).
+- Save money for chicken rice (we are broke).

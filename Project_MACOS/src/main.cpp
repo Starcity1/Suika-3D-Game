@@ -37,6 +37,8 @@ using namespace std;
 
 #define MAX_BUFFER_SIZE            1024
 
+#define _CAMERA_ROTATE_FACTOR       0.5f
+
 #define _ROTATE_FACTOR              0.005f
 #define _SCALE_FACTOR               0.01f
 #define _TRANS_FACTOR               0.02f
@@ -54,9 +56,10 @@ unsigned int winWidth  = 800;
 unsigned int winHeight = 600;
 
 // Camera
-glm::vec3 camera_position = glm::vec3 (2.0f, 2.0f, 3.0f);
+glm::vec3 camera_position = glm::vec3 (0.0f, 0.0f, 3.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+float camera_angle = 45.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
 float cameraSpeed = 0.05f;
@@ -284,7 +287,6 @@ int LoadInput()
     // load the OBJ file here
     //writing to vecv, vecn, and vecf
 
-    cout << "obj file is open"<<endl;
     while ( myfile.getline(buffer, MAX_BUFFER_SIZE) )
     {
         stringstream ss(buffer);
@@ -337,11 +339,6 @@ int LoadInput()
         }
     }
     myfile.close();
-
-    //checking and transfer
-    cout<<"number of vertices " <<vecv.size()<<endl;
-    cout<<"number of normals " <<vecn.size()<<endl;
-    cout<<"number of triangle faces " <<vecf.size()<<endl;
 
     vector<glm::vec3> vecn_reorder; // same order as the vecv
     vector<glm::vec3> vecf_reorder;
@@ -500,8 +497,6 @@ void activate_gravity(GLFWwindow* window) {
     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame;
 
     TranslateModel(gravity_vel_vector * .005f);
-
-    cout << glm::to_string(modelMatrix) << endl;
 }
 
 void RotateModel(float angle, glm::vec3 axis)
@@ -796,6 +791,9 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
 
+    // Update camera's position to a 45deg angle in a unit circle.
+    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+
     // Boolean activating gravity.
     bool gravityOn = false;
     while (!glfwWindowShouldClose(window))
@@ -815,6 +813,17 @@ int main()
             if (key == GLFW_KEY_SPACE && pressed)
             {
                 gravityOn = true;
+            }
+            if (key == GLFW_KEY_A && pressed)
+            {
+                // Update camera to go left
+                camera_angle = (camera_angle + _CAMERA_ROTATE_FACTOR);
+                camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+            }
+            if (key == GLFW_KEY_D && pressed)
+            {
+                camera_angle = (camera_angle - _CAMERA_ROTATE_FACTOR);
+                camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
             }
         }
         
