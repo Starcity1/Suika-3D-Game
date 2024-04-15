@@ -12,6 +12,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 #include <fstream>
 #include <chrono>
@@ -263,7 +264,7 @@ int LoadInput()
 
     // Input file name
 
-    ifstream myfile("../data/platform.obj");
+    ifstream myfile(PLATFORM_PATH);
 
     if (myfile.is_open() == false)
     {
