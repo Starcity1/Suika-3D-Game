@@ -3,7 +3,6 @@
 #include "util.h"
 
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,6 +11,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 #include <fstream>
 #include <chrono>
@@ -188,7 +188,7 @@ void calcUVMapping(void)
         float dy = vertex.v[1];
         float dz = vertex.v[2];
 
-        float u = 0.5f - glm::atan(dz, dx) / (2 * M_PI);
+        float u = 0.5f - glm::atan(dz, dx) / (2 * PI);
         float v = 0.5 + glm::acos(dy) / PI;
 
         vertex.t[0] = u;
@@ -263,7 +263,7 @@ int LoadInput()
 
     // Input file name
 
-    ifstream myfile("../data/platform.obj");
+    ifstream myfile(PLATFORM_PATH);
 
     if (myfile.is_open() == false)
     {
@@ -756,7 +756,7 @@ int main()
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load((MELON_TEXTURE), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.

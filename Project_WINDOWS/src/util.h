@@ -11,15 +11,17 @@
 
 
 // Texture paths.
-#define PLATFORM_PATH "../data/platform.obj"
-#define BASE_TEXTURE "../data/texture_stone.png"
-#define APPLE_TEXTURE "../Blenders/apple.png"
-#define BLUEBRRY_TEXTURE "../Blenders/blueberry.png"
-#define BOMB_TEXTURE "../Blenders/bomb.png"
-#define COCONUT_TEXTURE "../Blenders/coconut.png"
-#define MELON_TEXTURE "../Blenders/melon.png"
-#define PEACH_TEXTURE "../Blenders/peach.png"
-#define WMELON_TEXTURE "../Blenders/watermelon.png"
+#define PATH "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS"
+#define GLASS_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/data/glass.png"
+#define PLATFORM_PATH "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/data/platform.obj"
+#define BASE_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/data/texture_stone.png"
+#define APPLE_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/apple.png"
+#define BLUEBRRY_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/blueberry.png"
+#define BOMB_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/bomb.png"
+#define COCONUT_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/coconut.png"
+#define MELON_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/melon.png"
+#define PEACH_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/peach.png"
+#define WMELON_TEXTURE "C:/Users/choij/Desktop/50.017/50_017-Project/Project_WINDOWS/Blenders/watermelon.png"
 
 // Physicial values
 #define GRAVITY_ACCELERATION -.91f

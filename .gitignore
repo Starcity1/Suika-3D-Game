@@ -1,3 +1,10 @@
 Project_MACOS/build/
 Project_WINDOWS/src/util.h
+Project_WINDOWS/DEBUG/
 Project_MACOS/src/util.h
+Project_MACOS/out
+.vs
+
+Project_WINDOWS/Debug/Assignment_3_win.exe
+Project_WINDOWS/Debug/Assignment_3_win.exe.recipe
+Project_WINDOWS/Debug/Assignment_3_win.exe
