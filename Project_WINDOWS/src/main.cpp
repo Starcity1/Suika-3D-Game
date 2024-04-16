@@ -75,17 +75,24 @@ float prevMouseY;
 glm::mat4 modelMatrix = glm::mat4(1.0f);
 unordered_map<int, bool> keys;
 
-// Vectors to save mesh data
-vector<float> render_ver_nor_tex;       // List of points and normals for rendering
-vector<unsigned> render_f;              // List of faces for rendering
+// Vectors to save mesh data PLATFORM
+vector<float> render_ver_nor_tex_PLATFORM;       // List of points and normals for rendering
+vector<unsigned> render_f_PLATFORM;              // List of faces for rendering
+
+// Vectors to save mesh data SPHERE
+vector<float> render_ver_nor_tex_SPHERE;       // List of points and normals for rendering
+vector<unsigned> render_f_SPHERE;              // List of faces for rendering
 
 //main data for rendering
 Object myObject;
 vector<Object> myObjects;
 
-// render
-unsigned int VBO, VAO,EBO;
+Object platform;
 
+Object sphere;
+
+// render
+unsigned int VBO, VAO, EBO;
 
 // declaration
 void RotateModel(float angle, glm::vec3 axis);
@@ -202,7 +209,7 @@ void calcUVMapping(void)
 ///=========================================================================================///
 
 //// scale the model to the same size
-void scaleToUnitBox(void)
+void scaleToUnitBox(Object& object)
 {
     Point maxP;
     Point minP;
@@ -213,9 +220,9 @@ void scaleToUnitBox(void)
     Vector vBoxSize;
     Point  bboxCenterP;
 
-    for (unsigned int i = 0; i < myObject.vertices.size(); i++)
+    for (unsigned int i = 0; i < object.vertices.size(); i++)
     {
-        Vertex& v = myObject.vertices[i];
+        Vertex& v = object.vertices[i];
 
         if (v.v[0] < minP[0])     minP[0] = v.v[0];
         if (v.v[1] < minP[1])     minP[1] = v.v[1];
@@ -233,37 +240,37 @@ void scaleToUnitBox(void)
 
     float modelScale = 1.f / maxComponent3(vBoxSize);
 
-    for (unsigned int i = 0; i < myObject.vertices.size(); i++)
+    for (unsigned int i = 0; i < object.vertices.size(); i++)
     {
-        Vertex& v = myObject.vertices[i];
+        Vertex& v = object.vertices[i];
 
         v.v[0] = (v.v[0] - bboxCenterP[0]) * modelScale;
         v.v[1] = (v.v[1] - bboxCenterP[1]) * modelScale;
         v.v[2] = (v.v[2] - bboxCenterP[2]) * modelScale;
     }
 
-    myObject.bBox.minP[0] = (minP[0] - bboxCenterP[0]) * modelScale;
-    myObject.bBox.minP[1] = (minP[1] - bboxCenterP[1]) * modelScale;
-    myObject.bBox.minP[2] = (minP[2] - bboxCenterP[2]) * modelScale;
+    object.bBox.minP[0] = (minP[0] - bboxCenterP[0]) * modelScale;
+    object.bBox.minP[1] = (minP[1] - bboxCenterP[1]) * modelScale;
+    object.bBox.minP[2] = (minP[2] - bboxCenterP[2]) * modelScale;
 
-    myObject.bBox.maxP[0] = (maxP[0] - bboxCenterP[0]) * modelScale;
-    myObject.bBox.maxP[1] = (maxP[1] - bboxCenterP[1]) * modelScale;
-    myObject.bBox.maxP[2] = (maxP[2] - bboxCenterP[2]) * modelScale;
+    object.bBox.maxP[0] = (maxP[0] - bboxCenterP[0]) * modelScale;
+    object.bBox.maxP[1] = (maxP[1] - bboxCenterP[1]) * modelScale;
+    object.bBox.maxP[2] = (maxP[2] - bboxCenterP[2]) * modelScale;
 
-    myObject.bBox.vSize[0] = vBoxSize[0] * modelScale;
-    myObject.bBox.vSize[1] = vBoxSize[1] * modelScale;
-    myObject.bBox.vSize[2] = vBoxSize[2] * modelScale;
+    object.bBox.vSize[0] = vBoxSize[0] * modelScale;
+    object.bBox.vSize[1] = vBoxSize[1] * modelScale;
+    object.bBox.vSize[2] = vBoxSize[2] * modelScale;
 }
 
 // TODO: Modify function to load all objects.
-int LoadInput()
+int LoadInput(Object& object, string filename)
 {
     /////////////////////////////////////////////////////
     // 1. Open the input file
 
     // Input file name
 
-    ifstream myfile(PLATFORM_PATH);
+    ifstream myfile(filename);
 
     if (myfile.is_open() == false)
     {
@@ -292,8 +299,6 @@ int LoadInput()
         stringstream ss(buffer);
 
         ss >> s;
-
-        //printf("%s\n", s.c_str());
 
         if (s == "v"){
             ss >> v[0] >> v[1] >> v[2];
@@ -383,7 +388,7 @@ int LoadInput()
         }
     }
 
-    myObject.vertices.clear();
+    object.vertices.clear();
 
     for (int i = 0; i < vecv.size(); i++)
     {
@@ -400,58 +405,58 @@ int LoadInput()
         ver.t[0] = 0.0f;
         ver.t[1] = 0.0f;
 
-        myObject.vertices.push_back( ver );
+        object.vertices.push_back( ver );
     }
 
     Face face;
-    myObject.faces.clear();
+    object.faces.clear();
     for (int i = 0; i < vecf_reorder.size(); i++)
     {
         face.v1 = vecf_reorder[i][0];
         face.v2 = vecf_reorder[i][1];
         face.v3 = vecf_reorder[i][2];
 
-        myObject.faces.push_back(face);
+        object.faces.push_back(face);
     }
 
-    scaleToUnitBox();
+    scaleToUnitBox(object);
 
     return 0;
 }
 
 //TODO: Modify function such that ALL objects can be
-bool CreateRenderData()
+bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned>& render_f)
 {
-    if (0 == myObject.vertices.size())
+    if (0 == object.vertices.size())
     {
         return false;
     }
     else
     {
 
-        render_ver_nor_tex.clear();
+        render_ver.clear();
         render_f.clear();
 
-        for (int i = 0; i < myObject.vertices.size(); ++i) 
+        for (int i = 0; i < object.vertices.size(); ++i) 
         {
 
-            render_ver_nor_tex.push_back(myObject.vertices[i].v[0]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].v[1]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].v[2]);
+            render_ver.push_back(object.vertices[i].v[0]);
+            render_ver.push_back(object.vertices[i].v[1]);
+            render_ver.push_back(object.vertices[i].v[2]);
 
-            render_ver_nor_tex.push_back(myObject.vertices[i].n[0]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].n[1]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].n[2]);
+            render_ver.push_back(object.vertices[i].n[0]);
+            render_ver.push_back(object.vertices[i].n[1]);
+            render_ver.push_back(object.vertices[i].n[2]);
 
-            render_ver_nor_tex.push_back(myObject.vertices[i].t[0]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].t[1]);
+            render_ver.push_back(object.vertices[i].t[0]);
+            render_ver.push_back(object.vertices[i].t[1]);
         }
 
-        for (int j = 0; j < myObject.faces.size(); ++j) 
+        for (int j = 0; j < object.faces.size(); ++j) 
         {
-            render_f.push_back(myObject.faces[j].v1 );
-            render_f.push_back(myObject.faces[j].v2 );
-            render_f.push_back(myObject.faces[j].v3 );
+            render_f.push_back(object.faces[j].v1 );
+            render_f.push_back(object.faces[j].v2 );
+            render_f.push_back(object.faces[j].v3 );
         }
 
         return true;
@@ -646,8 +651,99 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 }
 
 
+///=========================================================================================///
+///                                      RENDER GLFW BINDING
+///=========================================================================================///
+unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsigned>& render_f) 
+{
+    // create buffers/arrays for surface
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
+    glBindVertexArray(VAO);
+    // load data into vertex buffers
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, render_ver.size() * sizeof(float), &render_ver[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, render_f.size() * sizeof(unsigned int), &render_f[0], GL_STATIC_DRAW);
 
+    // set the vertex attribute pointers
+    // vertex Positions
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // vertex normals
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), ((void*)(3* sizeof(float))));
+    glEnableVertexAttribArray(1);
+
+    // vertex texture coordinate
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+
+    // load and create a texture
+    // -------------------------
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    return texture;
+}
+
+///=========================================================================================///
+///                                      TEXTURE HANDLING
+///=========================================================================================///
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader)
+{
+    // load image, create texture and generate mipmaps
+    int width, height, nrChannels;
+    // Change back to ../data/textures.png
+    // "../Blenders/texture_wood.png"
+    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        // Adding error handling in case texture is not loaded properly.
+        try
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        catch(...)
+        {
+            perror("Could not load texture");
+        }
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+
+    // render mesh
+    myShader.use();
+
+    // render loop
+    // -----------
+
+    // Render projected texture in.
+    calcSphereMapping();
+    CreateRenderData(object, render_ver, render_f);
+
+    // load data into vertex buffers
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, render_ver.size() * sizeof(float), &render_ver[0], GL_STATIC_DRAW);
+    
+    return true;
+}
 
 ///=========================================================================================///
 ///                                      Main Function
@@ -705,99 +801,35 @@ int main()
     shader myShader;
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
-    LoadInput();
-
-    CreateRenderData();
-
-    // create buffers/arrays for surface
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-    // load data into vertex buffers
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, render_f.size() * sizeof(unsigned int), &render_f[0], GL_STATIC_DRAW);
-
-    // set the vertex attribute pointers
-    // vertex Positions
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // vertex normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), ((void*)(3* sizeof(float))));
-    glEnableVertexAttribArray(1);
-
-    // vertex texture coordinate
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0);
-
-    // load and create a texture
-    // -------------------------
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    LoadInput(platform, PLATFORM_PATH);
 
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    CreateRenderData(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
 
-    // load image, create texture and generate mipmaps
+    // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+    
+    // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader);
+    
 
-    int width, height, nrChannels;
-    // Change back to ../data/textures.png
-    // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
-    if (data)
-    {
-        // Adding error handling in case texture is not loaded properly.
-        try
-        {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-        }
-        catch(...)
-        {
-            perror("Could not load texture");
-        }
-    }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
+    LoadInput(sphere, SPHERE_PATH);
 
-    // render mesh
-    myShader.use();
+    CreateRenderData(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
 
-    // render loop
-    // -----------
-
-    // Render projected texture in.
-    calcSphereMapping();
-    CreateRenderData();
-
-    // load data into vertex buffers
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
+    // texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+    
+    // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
 
     // Boolean activating gravity.
     bool gravityOn = false;
+    
     while (!glfwWindowShouldClose(window))
     {
+        unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+    
+        loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader);
         // input
         // -----
         processInput(window);
@@ -854,9 +886,42 @@ int main()
         glBindVertexArray(VAO);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDrawElements(GL_TRIANGLES, render_f.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, render_f_PLATFORM.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
+        // start of attempting sphere
+        
+        texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+
+        loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader);
+        
+        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);
+
+        modelMatrix[3][1] += 0.5;
+        glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+        glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
+        // bind Texture
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glBindVertexArray(VAO);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
+        
+        modelMatrix[3][1] -= 0.5;
+        glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+        glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
+
+        // bind Texture
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glBindVertexArray(VAO);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(0);
+        
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
