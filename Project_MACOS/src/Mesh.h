@@ -160,6 +160,9 @@ struct Object
     std::vector<Vertex> vertices;
     std::vector<Face  > faces;
 
+    // Render data
+    unsigned int vao, vbo, ebo;
+
     BoundingBox         bBox;
 };
 

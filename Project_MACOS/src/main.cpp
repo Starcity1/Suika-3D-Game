@@ -12,7 +12,6 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
 #include <fstream>
 #include <chrono>
@@ -81,11 +80,7 @@ vector<float> render_ver_nor_tex;       // List of points and normals for render
 vector<unsigned> render_f;              // List of faces for rendering
 
 //main data for rendering
-Object myObject;
 vector<Object> myObjects;
-
-// render
-unsigned int VBO, VAO,EBO;
 
 
 // declaration
@@ -108,7 +103,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 ///=========================================================================================///
 
 
-void calcPlaneMapping(void)
+void calcPlaneMapping(Object& myObject)
 {
   // Main loop iterates through the entire set of vertices.
   for(auto& vertex : myObject.vertices)
@@ -136,7 +131,7 @@ void calcPlaneMapping(void)
 }
 
 
-void calcCylindricalMapping(void)
+void calcCylindricalMapping(Object& myObject)
 { 
   for(auto& vertex : myObject.vertices)
   {
@@ -156,7 +151,7 @@ void calcCylindricalMapping(void)
 }
 
 
-void calcSphereMapping(void)
+void calcSphereMapping(Object& myObject)
 {
    for(auto& vertex : myObject.vertices)
    {
@@ -181,7 +176,7 @@ void calcSphereMapping(void)
    }
 }
 
-void calcUVMapping(void)
+void calcUVMapping(Object& myObject)
 {
     for(auto& vertex : myObject.vertices)
     {
@@ -203,7 +198,7 @@ void calcUVMapping(void)
 ///=========================================================================================///
 
 //// scale the model to the same size
-void scaleToUnitBox(void)
+void scaleToUnitBox(Object& myObject)
 {
     Point maxP;
     Point minP;
@@ -256,15 +251,15 @@ void scaleToUnitBox(void)
     myObject.bBox.vSize[2] = vBoxSize[2] * modelScale;
 }
 
-// TODO: Modify function to load all objects.
-int LoadInput()
+// TODO: Modify function to load multiple objects.
+int LoadInput(string filename, Object& myObject)
 {
     /////////////////////////////////////////////////////
     // 1. Open the input file
 
     // Input file name
 
-    ifstream myfile(PLATFORM_PATH);
+    ifstream myfile(filename);
 
     if (myfile.is_open() == false)
     {
@@ -415,13 +410,13 @@ int LoadInput()
         myObject.faces.push_back(face);
     }
 
-    scaleToUnitBox();
+    scaleToUnitBox(myObject);
 
     return 0;
 }
 
-//TODO: Modify function such that ALL objects can be
-bool CreateRenderData()
+//TODO: Modify function such that MULTIPLE objects can be rendered
+bool CreateRenderData(Object& myObject)
 {
     if (0 == myObject.vertices.size())
     {
@@ -706,91 +701,99 @@ int main()
     shader myShader;
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
-    LoadInput();
+    // Loading input and render data for each value.
+    Object object_1, object_2;
+    myObjects.push_back(object_1); myObjects.push_back(object_2);
 
-    CreateRenderData();
-
-    // create buffers/arrays for surface
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-
-    glBindVertexArray(VAO);
-    // load data into vertex buffers
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, render_f.size() * sizeof(unsigned int), &render_f[0], GL_STATIC_DRAW);
-
-    // set the vertex attribute pointers
-    // vertex Positions
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // vertex normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), ((void*)(3* sizeof(float))));
-    glEnableVertexAttribArray(1);
-
-    // vertex texture coordinate
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0);
-
-    // load and create a texture
-    // -------------------------
     unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // load image, create texture and generate mipmaps
-
-    int width, height, nrChannels;
-    // Change back to ../data/textures.png
-    // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load("../data/glass.png", &width, &height, &nrChannels, 0);
-    if (data)
+    for (auto &myObject : myObjects)
     {
-        // Adding error handling in case texture is not loaded properly.
-        try
+        LoadInput("../data/sphere.obj", myObject);
+        CreateRenderData(myObject);
+
+        // create buffers/arrays for surface
+        glGenVertexArrays(1, &(myObject.vao));
+        glGenBuffers(1, &(myObject.vbo));
+        glGenBuffers(1, &(myObject.ebo));
+
+        glBindVertexArray(myObject.vao);
+        // load data into vertex buffers
+        glBindBuffer(GL_ARRAY_BUFFER, myObject.vbo);
+        glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, myObject.ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, render_f.size() * sizeof(unsigned int), &render_f[0], GL_STATIC_DRAW);
+    
+        // set the vertex attribute pointers
+        // vertex Positions
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        // vertex normals
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), ((void*)(3* sizeof(float))));
+        glEnableVertexAttribArray(1);
+
+        // vertex texture coordinate
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+
+        glBindVertexArray(0);
+
+        // load and create a texture
+        // -------------------------
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+        
+        // set the texture wrapping parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        // set texture filtering parameters
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        // load image, create texture and generate mipmaps
+
+        int width, height, nrChannels;
+        // Change back to ../data/textures.png
+        // "../Blenders/texture_wood.png"
+        unsigned char *data = stbi_load(WMELON_TEXTURE, &width, &height, &nrChannels, 0);
+        if (data)
         {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            glGenerateMipmap(GL_TEXTURE_2D);
+            // Adding error handling in case texture is not loaded properly.
+            try
+            {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                glGenerateMipmap(GL_TEXTURE_2D);
+            }
+            catch(...)
+            {
+                perror("Could not load texture");
+            }
         }
-        catch(...)
+        else
         {
-            perror("Could not load texture");
+            std::cout << "Failed to load texture" << std::endl;
         }
+        stbi_image_free(data);
+
+        // render mesh
+        myShader.use();
+
+        // render loop
+        // load data into vertex buffers
+        glBindVertexArray(myObject.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, myObject.vbo);
+        glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
+        
+        // Render projected texture in.
+        calcPlaneMapping(myObject); 
+    
     }
-    else
-    {
-        std::cout << "Failed to load texture" << std::endl;
-    }
-    stbi_image_free(data);
 
-    // render mesh
-    myShader.use();
+    TranslateModel(glm::vec3(1.0f));
 
-    // render loop
-    // -----------
-
-    // Render projected texture in.
-    calcSphereMapping();
-    CreateRenderData();
-
-    // load data into vertex buffers
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
@@ -852,7 +855,8 @@ int main()
         // bind Texture
         glBindTexture(GL_TEXTURE_2D, texture);
 
-        glBindVertexArray(VAO);
+        for(auto& myObject : myObjects)
+            glBindVertexArray(myObject.vao);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f.size(), GL_UNSIGNED_INT, 0);
@@ -866,8 +870,11 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    for(auto& myObject : myObjects)
+    {
+        glDeleteVertexArrays(1, &(myObject.vao));
+        glDeleteBuffers(1, &myObject.vbo);
+    }
     glDeleteProgram(myShader.ID);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.

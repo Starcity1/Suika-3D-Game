@@ -1,6 +1,6 @@
 
-#ifndef ASSIGNMENT_2_SHADER_H
-#define ASSIGNMENT_2_SHADER_H
+#ifndef PROJECT_SHADER_H
+#define PROJECT_SHADER_H
 #include <glm/glm.hpp>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
