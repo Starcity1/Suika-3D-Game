@@ -819,14 +819,14 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
     // Sets mouse_button_callback() function as handler when mouse press event happens.
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    // glfwSetMouseButtonCallback(window, mouse_button_callback);
     // Sets cursor_pos_callback() function as handler when press event happens.
-    glfwSetCursorPosCallback(window, cursor_pos_callback);
+    // glfwSetCursorPosCallback(window, cursor_pos_callback);
     // Sets scroll_callback() function as handler when scroll event happens.
-    glfwSetScrollCallback(window, scroll_callback);
+    // glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture the mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -878,12 +878,13 @@ int main()
         0, 0, 0.5, 1,
     };
     
-    Watermelon* wa1 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::mat4(1));
-    Watermelon* wa2 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", tempMove);
+    Watermelon* wa1 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::scale(glm::mat4(1), glm::vec3(0.2)));
+    Watermelon* wa2 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::scale(tempMove, glm::vec3(0.2)));
 
     fruits->push_fruit(wa1);
     fruits->push_fruit(wa2);
 
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
     while (!glfwWindowShouldClose(window))
     {
         // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
@@ -938,14 +939,17 @@ int main()
             }
         }
         float current_frame = glfwGetTime();
-        fruits->velToMatrixFruits(current_frame * 0.0000000009f);
+        fruits->velToMatrixFruits(current_frame * 0.000000009f);
         if (gravityOn)
             activate_gravity(window);
             newGravity(*fruits);
 
         // Clear the buffer
-        glClearColor(0.85f, 0.85f, 0.85f, 1.0f);
+        glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
         // view/projection transformations
         projection = glm::perspective(glm::radians(camera_fovy), (float)winWidth / (float)winHeight, _Z_NEAR, _Z_FAR);
@@ -957,7 +961,6 @@ int main()
 
         // render the loaded model
         glm::vec3 aColor = glm::vec3 (0.9f, 0.9f, 0.9f);
-
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
@@ -967,6 +970,7 @@ int main()
 
         glBindVertexArray(VAO_P);
 
+        
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_PLATFORM.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);

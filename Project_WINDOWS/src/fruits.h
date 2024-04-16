@@ -45,7 +45,7 @@ struct Fruit
     {
         radius = 0;
         position = {0, 0, 0};
-        mat = glm::mat4(1);
+        mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
         texture = "";
         velocity = {0, 0, 0};
     }
@@ -77,7 +77,7 @@ struct Watermelon: Fruit
     {
         radius = 0;
         position = {0, 0, 0};
-        mat = glm::mat4(1);
+        mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
         texture = WMELON_TEXTURE;
         velocity = {0, 0, 0};
     }
