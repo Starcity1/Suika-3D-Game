@@ -12,6 +12,7 @@
         "xtree": "cpp",
         "xutility": "cpp",
         "cmath": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "utility": "cpp"
     }
 }
