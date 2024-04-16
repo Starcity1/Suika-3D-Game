@@ -93,7 +93,8 @@ Object platform;
 Object sphere;
 
 // render
-unsigned int VBO, VAO, EBO;
+unsigned int VBO_P, VAO_P, EBO_P;
+unsigned int VBO_S, VAO_S, EBO_S;
 
 // declaration
 void RotateModel(float angle, glm::vec3 axis);
@@ -655,7 +656,7 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 ///=========================================================================================///
 ///                                      RENDER GLFW BINDING
 ///=========================================================================================///
-unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsigned>& render_f) 
+unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO) 
 {
     // create buffers/arrays for surface
     glGenVertexArrays(1, &VAO);
@@ -702,7 +703,7 @@ unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsig
 ///=========================================================================================///
 ///                                      TEXTURE HANDLING
 ///=========================================================================================///
-bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader)
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
 {
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
@@ -802,23 +803,23 @@ int main()
     shader myShader;
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
-    
+    // PLATFORM
     LoadInput(platform, PLATFORM_PATH);
 
     CreateRenderData(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
 
-    // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+    unsigned int texture_p = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, VAO_P, VBO_P, EBO_P);
     
-    // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader);
+    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
     
-
+    // SPHERE
     LoadInput(sphere, SPHERE_PATH);
 
     CreateRenderData(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
 
-    // texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+    unsigned int texture_s = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
     
-    // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader);
+    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_S, VBO_S, EBO_S);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
@@ -828,9 +829,9 @@ int main()
     
     while (!glfwWindowShouldClose(window))
     {
-        unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+        // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
     
-        loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader);
+        // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
         // input
         // -----
         processInput(window);
@@ -882,9 +883,10 @@ int main()
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
         // bind Texture
-        glBindTexture(GL_TEXTURE_2D, texture);
+        // PLATFORM
+        glBindTexture(GL_TEXTURE_2D, texture_p);
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAO_P);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_PLATFORM.size(), GL_UNSIGNED_INT, 0);
@@ -892,29 +894,19 @@ int main()
 
         // start of attempting sphere
         
-        texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+        // texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
 
-        loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader);
+        // loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, VAO_S, VBO_S, EBO_S);
         
-        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);
-
-        glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
-        glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
-        // bind Texture
-        glBindTexture(GL_TEXTURE_2D, texture);
-
-        glBindVertexArray(VAO);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
-        
+        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
         // bind Texture
-        glBindTexture(GL_TEXTURE_2D, texture);
+        // SPHERE
+        glBindTexture(GL_TEXTURE_2D, texture_s);
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAO_S);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
@@ -929,9 +921,9 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(myShader.ID);
+    // glDeleteVertexArrays(1, &VAO);
+    // glDeleteBuffers(1, &VBO);
+    // glDeleteProgram(myShader.ID);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
