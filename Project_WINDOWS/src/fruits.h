@@ -64,7 +64,10 @@ struct Fruit
     virtual string getTexture(){return texture;} // getter function
 
     void velToMatrix(float current_frame) {
-        mat[3] = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
+        glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
+        if (temp[1] >= -1) {
+            mat[3] = temp;
+        } 
     }
 };
 
