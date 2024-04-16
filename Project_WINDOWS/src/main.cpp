@@ -30,7 +30,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-
+// our stuff
+#include "fruits.h"
 
 using namespace std;
 
@@ -897,7 +898,6 @@ int main()
         
         aColor = glm::vec3 (0.9f, 0.9f, 0.9f);
 
-        modelMatrix[3][1] += 0.5;
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
         // bind Texture
@@ -908,7 +908,6 @@ int main()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
         
-        modelMatrix[3][1] -= 0.5;
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
