@@ -918,7 +918,7 @@ int main()
             }
 
             if (pair.second == "HOLD" || pair.second == "PRESS") {
-                
+
                 if (key == GLFW_KEY_A)
                 {
                     // Update camera to go left

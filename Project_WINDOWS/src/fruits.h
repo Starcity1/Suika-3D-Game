@@ -74,7 +74,28 @@ struct Fruit
 
     virtual string getTexture(){return texture;} // getter function
 
-    void velToMatrix(float current_frame, vector<Fruit*>& fruits, int i) {
+    void GJK(Fruit& fruit) {
+        float dist = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
+        if (dist <= radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
+            float velM = 0.9;
+            float tempX = velocity[0];
+
+            velocity[0] = fruit.velocity[0] * velM; 
+            fruit.velocity[0] = tempX * velM;
+
+            float tempZ = velocity[2];
+
+            velocity[2] = fruit.velocity[2] * velM; 
+            fruit.velocity[2] = tempZ * velM;
+
+            velocity[1] = 0;
+            fruit.velocity[1] = 0;
+
+            mat[3] += glm::vec4(velocity[0], velocity[1], velocity[2], 0) * radius * 0.15f;
+        }
+    }
+    // handles movement
+    void velToMatrix(float current_frame, vector<Fruit*>& fruits, int curI) {
         glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
 
         float velModifier = -0.5;
@@ -96,6 +117,11 @@ struct Fruit
             mat[3][2] += velocity[2] * radius * 0.15;
         }
 
+        for (int i = 0; i < fruits.size() - 1; i++) {
+            if (i != curI) {
+                this->GJK(*fruits[i]);
+            }
+        }
     }
 };
 
