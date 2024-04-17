@@ -3,7 +3,6 @@
 #include "util.h"
 
 #include <sys/stat.h>
-#include <unistd.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -22,6 +21,8 @@
 #include "shader.h"
 #include "Mesh.h"
 
+#include <cstdlib>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -30,15 +31,17 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-
+#include <time.h>
+// our stuff
+#include "fruits.h"
+#include "fruitstructs/blueberry.h"
 
 using namespace std;
 
 
 #define MAX_BUFFER_SIZE            1024
 
-#define _CAMERA_ROTATE_FACTOR       0.5f
+#define _CAMERA_ROTATE_FACTOR       0.05f
 
 #define _ROTATE_FACTOR              0.005f
 #define _SCALE_FACTOR               0.01f
@@ -63,8 +66,9 @@ glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 float camera_angle = 45.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
-float cameraSpeed = 0.05f;
-
+float cameraSpeed = 0.01f;
+float frameTime = 0;
+float prevFrame = 0;
 float delta_time = 0.0f; // Time between current frame and last frame
 float last_frame = 0.0f; // Time of last frame
 
@@ -74,19 +78,27 @@ bool isFirstMouse = true;
 float prevMouseX;
 float prevMouseY;
 glm::mat4 modelMatrix = glm::mat4(1.0f);
-unordered_map<int, bool> keys;
+unordered_map<int, string> keys;
 
-// Vectors to save mesh data
-vector<float> render_ver_nor_tex;       // List of points and normals for rendering
-vector<unsigned> render_f;              // List of faces for rendering
+// Vectors to save mesh data PLATFORM
+vector<float> render_ver_nor_tex_PLATFORM;       // List of points and normals for rendering
+vector<unsigned> render_f_PLATFORM;              // List of faces for rendering
+
+// Vectors to save mesh data SPHERE
+vector<float> render_ver_nor_tex_SPHERE;       // List of points and normals for rendering
+vector<unsigned> render_f_SPHERE;              // List of faces for rendering
 
 //main data for rendering
 Object myObject;
 vector<Object> myObjects;
 
-// render
-unsigned int VBO, VAO,EBO;
+Object platform;
 
+Object sphere;
+
+// render
+unsigned int VBO_P, VAO_P, EBO_P;
+unsigned int VBO_S, VAO_S, EBO_S;
 
 // declaration
 void RotateModel(float angle, glm::vec3 axis);
@@ -189,7 +201,7 @@ void calcUVMapping(void)
         float dy = vertex.v[1];
         float dz = vertex.v[2];
 
-        float u = 0.5f - glm::atan(dz, dx) / (2 * M_PI);
+        float u = 0.5f - glm::atan(dz, dx) / (2 * PI);
         float v = 0.5 + glm::acos(dy) / PI;
 
         vertex.t[0] = u;
@@ -197,13 +209,40 @@ void calcUVMapping(void)
     }
 }
 
+void newGravity(Fruits fruits, float current_frame)
+{
+
+    vector<Fruit*> fruitList = fruits.fruits;
+    for (int i = 0; i < fruitList.size() - 1; i++) 
+    {
+        float yPos = fruitList[i]->mat[3][1] + (fruitList[i]->velocity[1] - current_frame * 0.2) * current_frame;
+        if (yPos < PLATFORM_BOT + fruitList[i]->radius * RADIUS_SCALE) {
+            continue;
+        } 
+        bool somethingBelow = false;
+        for (int j = 0; j < fruitList.size() - 1; j++) {
+            if (i != j) {
+                Fruit fruit = *fruitList[i];
+                glm::vec3 temp = fruitList[j]->mat[3];
+                float dist = sqrt(pow(fruit.mat[3][0] - temp[0], 2) + pow(yPos - temp[1], 2) + pow(fruit.mat[3][2] - temp[2], 2));
+                if (dist <= fruitList[j]->radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
+                    somethingBelow = true;
+                    break;
+                }
+            }
+        }
+        if (!somethingBelow) {
+            fruitList[i]->velocity[1] -= current_frame * 0.2;
+        }
+    }
+}
 
 ///=========================================================================================///
 ///                            Functions to Load and Render a 3D Model 
 ///=========================================================================================///
 
 //// scale the model to the same size
-void scaleToUnitBox(void)
+void scaleToUnitBox(Object& object)
 {
     Point maxP;
     Point minP;
@@ -214,9 +253,9 @@ void scaleToUnitBox(void)
     Vector vBoxSize;
     Point  bboxCenterP;
 
-    for (unsigned int i = 0; i < myObject.vertices.size(); i++)
+    for (unsigned int i = 0; i < object.vertices.size(); i++)
     {
-        Vertex& v = myObject.vertices[i];
+        Vertex& v = object.vertices[i];
 
         if (v.v[0] < minP[0])     minP[0] = v.v[0];
         if (v.v[1] < minP[1])     minP[1] = v.v[1];
@@ -234,37 +273,37 @@ void scaleToUnitBox(void)
 
     float modelScale = 1.f / maxComponent3(vBoxSize);
 
-    for (unsigned int i = 0; i < myObject.vertices.size(); i++)
+    for (unsigned int i = 0; i < object.vertices.size(); i++)
     {
-        Vertex& v = myObject.vertices[i];
+        Vertex& v = object.vertices[i];
 
         v.v[0] = (v.v[0] - bboxCenterP[0]) * modelScale;
         v.v[1] = (v.v[1] - bboxCenterP[1]) * modelScale;
         v.v[2] = (v.v[2] - bboxCenterP[2]) * modelScale;
     }
 
-    myObject.bBox.minP[0] = (minP[0] - bboxCenterP[0]) * modelScale;
-    myObject.bBox.minP[1] = (minP[1] - bboxCenterP[1]) * modelScale;
-    myObject.bBox.minP[2] = (minP[2] - bboxCenterP[2]) * modelScale;
+    object.bBox.minP[0] = (minP[0] - bboxCenterP[0]) * modelScale;
+    object.bBox.minP[1] = (minP[1] - bboxCenterP[1]) * modelScale;
+    object.bBox.minP[2] = (minP[2] - bboxCenterP[2]) * modelScale;
 
-    myObject.bBox.maxP[0] = (maxP[0] - bboxCenterP[0]) * modelScale;
-    myObject.bBox.maxP[1] = (maxP[1] - bboxCenterP[1]) * modelScale;
-    myObject.bBox.maxP[2] = (maxP[2] - bboxCenterP[2]) * modelScale;
+    object.bBox.maxP[0] = (maxP[0] - bboxCenterP[0]) * modelScale;
+    object.bBox.maxP[1] = (maxP[1] - bboxCenterP[1]) * modelScale;
+    object.bBox.maxP[2] = (maxP[2] - bboxCenterP[2]) * modelScale;
 
-    myObject.bBox.vSize[0] = vBoxSize[0] * modelScale;
-    myObject.bBox.vSize[1] = vBoxSize[1] * modelScale;
-    myObject.bBox.vSize[2] = vBoxSize[2] * modelScale;
+    object.bBox.vSize[0] = vBoxSize[0] * modelScale;
+    object.bBox.vSize[1] = vBoxSize[1] * modelScale;
+    object.bBox.vSize[2] = vBoxSize[2] * modelScale;
 }
 
 // TODO: Modify function to load all objects.
-int LoadInput()
+int LoadInput(Object& object, string filename)
 {
     /////////////////////////////////////////////////////
     // 1. Open the input file
 
     // Input file name
 
-    ifstream myfile(PLATFORM_PATH);
+    ifstream myfile(filename);
 
     if (myfile.is_open() == false)
     {
@@ -293,8 +332,6 @@ int LoadInput()
         stringstream ss(buffer);
 
         ss >> s;
-
-        //printf("%s\n", s.c_str());
 
         if (s == "v"){
             ss >> v[0] >> v[1] >> v[2];
@@ -384,7 +421,7 @@ int LoadInput()
         }
     }
 
-    myObject.vertices.clear();
+    object.vertices.clear();
 
     for (int i = 0; i < vecv.size(); i++)
     {
@@ -401,58 +438,58 @@ int LoadInput()
         ver.t[0] = 0.0f;
         ver.t[1] = 0.0f;
 
-        myObject.vertices.push_back( ver );
+        object.vertices.push_back( ver );
     }
 
     Face face;
-    myObject.faces.clear();
+    object.faces.clear();
     for (int i = 0; i < vecf_reorder.size(); i++)
     {
         face.v1 = vecf_reorder[i][0];
         face.v2 = vecf_reorder[i][1];
         face.v3 = vecf_reorder[i][2];
 
-        myObject.faces.push_back(face);
+        object.faces.push_back(face);
     }
 
-    scaleToUnitBox();
+    scaleToUnitBox(object);
 
     return 0;
 }
 
 //TODO: Modify function such that ALL objects can be
-bool CreateRenderData()
+bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned>& render_f)
 {
-    if (0 == myObject.vertices.size())
+    if (0 == object.vertices.size())
     {
         return false;
     }
     else
     {
 
-        render_ver_nor_tex.clear();
+        render_ver.clear();
         render_f.clear();
 
-        for (int i = 0; i < myObject.vertices.size(); ++i) 
+        for (int i = 0; i < object.vertices.size(); ++i) 
         {
 
-            render_ver_nor_tex.push_back(myObject.vertices[i].v[0]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].v[1]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].v[2]);
+            render_ver.push_back(object.vertices[i].v[0]);
+            render_ver.push_back(object.vertices[i].v[1]);
+            render_ver.push_back(object.vertices[i].v[2]);
 
-            render_ver_nor_tex.push_back(myObject.vertices[i].n[0]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].n[1]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].n[2]);
+            render_ver.push_back(object.vertices[i].n[0]);
+            render_ver.push_back(object.vertices[i].n[1]);
+            render_ver.push_back(object.vertices[i].n[2]);
 
-            render_ver_nor_tex.push_back(myObject.vertices[i].t[0]);
-            render_ver_nor_tex.push_back(myObject.vertices[i].t[1]);
+            render_ver.push_back(object.vertices[i].t[0]);
+            render_ver.push_back(object.vertices[i].t[1]);
         }
 
-        for (int j = 0; j < myObject.faces.size(); ++j) 
+        for (int j = 0; j < object.faces.size(); ++j) 
         {
-            render_f.push_back(myObject.faces[j].v1 );
-            render_f.push_back(myObject.faces[j].v2 );
-            render_f.push_back(myObject.faces[j].v3 );
+            render_f.push_back(object.faces[j].v1 );
+            render_f.push_back(object.faces[j].v2 );
+            render_f.push_back(object.faces[j].v3 );
         }
 
         return true;
@@ -464,41 +501,43 @@ bool CreateRenderData()
 ///         Functions for Moving Camera
 ///=====================================================///
 
-void update_camera_position(GLFWwindow* window)
-{
-    float currentFrame = glfwGetTime();
-    delta_time = currentFrame - last_frame;
-    last_frame = currentFrame;
+// void update_camera_position(GLFWwindow* window)
+// {
+//     float currentFrame = glfwGetTime();
+//     delta_time = currentFrame - last_frame;
+//     last_frame = currentFrame;
 
-    float cameraSpeedMultiplier = cameraSpeed * delta_time;
+//     float cameraSpeedMultiplier = cameraSpeed * delta_time;
 
-    if (keys[GLFW_KEY_W]) {
-        camera_position += cameraSpeedMultiplier * camera_target;
-    }
-    if (keys[GLFW_KEY_S]) {
-        camera_position -= cameraSpeedMultiplier * camera_target;
-    }
-    if (keys[GLFW_KEY_A]) {
-        camera_position -= glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
-    }
-    if (keys[GLFW_KEY_D]) {
-        camera_position += glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
-    }
-}
+//     if (keys[GLFW_KEY_W]) {
+//         camera_position += glm::normalize(camera_up) * cameraSpeedMultiplier;
+//         cout << "up!" << endl;
+//     }
+//     if (keys[GLFW_KEY_S]) {
+//         camera_position -= glm::normalize(camera_up) * cameraSpeedMultiplier;
+//         cout << "down!" << endl;
+//     }
+//     if (keys[GLFW_KEY_A]) {
+//         camera_position -= glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
+//         cout << "left!" << endl;
+//     }
+//     if (keys[GLFW_KEY_D]) {
+//         camera_position += glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
+//         cout << "right!" << endl;
+//     }
+// }
 
 ///=====================================================///
 ///         Functions for Manipulating 3D Model  
 ///=====================================================///
 
-void activate_gravity(GLFWwindow* window) {
-    // Calculate time change.
-    float current_frame = glfwGetTime();
+// void activate_gravity(GLFWwindow* window) {
+//     // Calculate time change.
+//     float current_frame = glfwGetTime();
     
-    // get current position.
-    glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame;
-
-    TranslateModel(gravity_vel_vector * .005f);
-}
+//     // get current position.
+//     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
+// }
 
 void RotateModel(float angle, glm::vec3 axis)
 {
@@ -568,12 +607,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
     // Adding key callouts for camera movement.
     glm::vec3 trans = glm::vec3(0.0f);
-    if (action == GLFW_PRESS || action == GLFW_REPEAT)
+    if (action == GLFW_PRESS) {
+        keys[key] = "PRESS";
+    }
+    else if (action == GLFW_REPEAT)
     {
-        keys[key] = true;
+        keys[key] = "HOLD";
     } else
     {
-        keys[key] = false;
+        keys[key] = "";
     }
 }
 
@@ -647,69 +689,11 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 }
 
 
-
-
-
 ///=========================================================================================///
-///                                      Main Function
+///                                      RENDER GLFW BINDING
 ///=========================================================================================///
-
-int main()
+unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO) 
 {
-    // glfw: initialize and configure
-    // ------------------------------
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    // glfw window creation
-    // --------------------
-    GLFWwindow* window = glfwCreateWindow(winWidth, winHeight, "Project", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetKeyCallback(window, key_callback);
-    // Sets mouse_button_callback() function as handler when mouse press event happens.
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    // Sets cursor_pos_callback() function as handler when press event happens.
-    glfwSetCursorPosCallback(window, cursor_pos_callback);
-    // Sets scroll_callback() function as handler when scroll event happens.
-    glfwSetScrollCallback(window, scroll_callback);
-
-    // tell GLFW to capture the mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
-
-    // configure global opengl state
-    // -----------------------------
-    glEnable(GL_DEPTH_TEST);
-
-    // construct the shaders
-    //shader
-    shader myShader;
-    myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
-
-    LoadInput();
-
-    CreateRenderData();
-
     // create buffers/arrays for surface
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -718,8 +702,7 @@ int main()
     glBindVertexArray(VAO);
     // load data into vertex buffers
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
-
+    glBufferData(GL_ARRAY_BUFFER, render_ver.size() * sizeof(float), &render_ver[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, render_f.size() * sizeof(unsigned int), &render_f[0], GL_STATIC_DRAW);
 
@@ -743,7 +726,6 @@ int main()
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -751,13 +733,19 @@ int main()
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    return texture;
+}
 
+///=========================================================================================///
+///                                      TEXTURE HANDLING
+///=========================================================================================///
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
+{
     // load image, create texture and generate mipmaps
-
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load("../data/glass.png", &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -785,55 +773,246 @@ int main()
 
     // Render projected texture in.
     calcSphereMapping();
-    CreateRenderData();
+    CreateRenderData(object, render_ver, render_f);
 
     // load data into vertex buffers
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, render_ver_nor_tex.size() * sizeof(float), &render_ver_nor_tex[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, render_ver.size() * sizeof(float), &render_ver[0], GL_STATIC_DRAW);
+    
+    return true;
+}
+
+///=========================================================================================///
+///                                   Draw Fruit Function
+///=========================================================================================///
+
+void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigned int texture_s) 
+{
+    for (int i = 0; i < fruits.size(); i++)
+    {
+        glm::mat4 tempMatrix = fruits[i]->mat;
+
+        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);    
+
+        glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &tempMatrix[0][0]);
+        glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
+
+        glBindTexture(GL_TEXTURE_2D, texture_s);
+
+        glBindVertexArray(VAO_S);
+
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
+
+        glBindVertexArray(0);
+    }
+}
+
+
+///=========================================================================================///
+///                                      Main Function
+///=========================================================================================///
+
+int main()
+{
+    // glfw: initialize and configure
+    // ------------------------------
+    srand(time(NULL));
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
+
+    // glfw window creation
+    // --------------------
+    GLFWwindow* window = glfwCreateWindow(winWidth, winHeight, "Project", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
+    // Sets mouse_button_callback() function as handler when mouse press event happens.
+    // glfwSetMouseButtonCallback(window, mouse_button_callback);
+    // Sets cursor_pos_callback() function as handler when press event happens.
+    // glfwSetCursorPosCallback(window, cursor_pos_callback);
+    // Sets scroll_callback() function as handler when scroll event happens.
+    // glfwSetScrollCallback(window, scroll_callback);
+
+    // tell GLFW to capture the mouse
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+
+    // construct the shaders
+    //shader
+    shader myShader;
+    myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
+
+    // PLATFORM
+    LoadInput(platform, PLATFORM_PATH);
+
+    CreateRenderData(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+
+    unsigned int texture_p = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, VAO_P, VBO_P, EBO_P);
+    
+    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
+    
+    // SPHERE
+    LoadInput(sphere, SPHERE_PATH);
+
+    CreateRenderData(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+
+    unsigned int texture_s = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
+    
+    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_S, VBO_S, EBO_S);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
 
     // Boolean activating gravity.
     bool gravityOn = false;
+    
+    Fruits* fruits = new Fruits();
+
+    glm::mat4 tempMove = {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 1, 0, 1,
+    };
+    
+
+    Blueberry* origin = new Blueberry();
+    // fruits->push_fruit(wa1);
+    fruits->push_fruit(origin);
+
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
     while (!glfwWindowShouldClose(window))
     {
+
+        float time = glfwGetTime();
+        frameTime = time;
+        float current_frame = frameTime - prevFrame;
+        prevFrame = time;
+        // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+    
+        // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
         // input
         // -----
         processInput(window);
 
         // Update camera position.
         // update_camera_position(window);
+        const float _CAMERA_MOVE_SPEED = 0.02f;
 
         for(auto& pair : keys)
         {
             int key = pair.first;
-            bool pressed = pair.second;
             // Special input to run the scene.
-            if (key == GLFW_KEY_SPACE && pressed)
+            if (key == GLFW_KEY_SPACE && pair.second == "PRESS")
             {
-                gravityOn = true;
+                int randFruit = rand() % 3; 
+                
+                if (randFruit == 0) {
+                    fruits->push_fruit(new Blueberry());
+                }
+                else if (randFruit == 1) {
+                    fruits->push_fruit(new Cherry());
+                }
+                else if (randFruit == 2) {
+                    fruits->push_fruit(new Lime());
+                }
+
+                
+                pair.second = "";
+                cout << "GENERATING A BALL" << endl;
             }
-            if (key == GLFW_KEY_A && pressed)
-            {
-                // Update camera to go left
-                camera_angle = (camera_angle + _CAMERA_ROTATE_FACTOR);
-                camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
-            }
-            if (key == GLFW_KEY_D && pressed)
-            {
-                camera_angle = (camera_angle - _CAMERA_ROTATE_FACTOR);
-                camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+
+            if (pair.second == "HOLD" || pair.second == "PRESS") {
+
+                if (key == GLFW_KEY_A)
+                {
+                    // Update camera to go left
+                    camera_angle = (camera_angle + _CAMERA_ROTATE_FACTOR);
+                    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+                }
+                if (key == GLFW_KEY_D)
+                {
+                    camera_angle = (camera_angle - _CAMERA_ROTATE_FACTOR);
+                    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+                }
+                if (key == GLFW_KEY_W)
+                {
+                    // Move the camera forward
+                    glm::vec3 forward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
+                    camera_position -= _CAMERA_MOVE_SPEED * forward;
+                }
+                if (key == GLFW_KEY_S)
+                {
+                    // Move the camera backward
+                    glm::vec3 backward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
+                    camera_position += _CAMERA_MOVE_SPEED * backward;
+                }
+                float ballSpeed = 0.001;
+                float extraSpace = 0.05;
+                Fruit* curFruit = fruits->fruits[fruits->fruits.size() - 1]; 
+                if (key == GLFW_KEY_LEFT)
+                {
+                    if (curFruit->mat[3][0] > PLATFORM_LEFT + curFruit->radius * RADIUS_SCALE + extraSpace){
+                        curFruit->mat[3][0] -= ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_RIGHT)
+                {
+                    if (curFruit->mat[3][0] < PLATFORM_RIGHT - curFruit->radius * RADIUS_SCALE - extraSpace){
+                        curFruit->mat[3][0] += ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_UP)
+                {
+                    if (curFruit->mat[3][2] > PLATFORM_UP + curFruit->radius * RADIUS_SCALE + extraSpace){
+                        curFruit->mat[3][2] -= ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_DOWN)
+                {
+                    if (curFruit->mat[3][2] < PLATFORM_DOWN - curFruit->radius * RADIUS_SCALE - extraSpace){
+                        curFruit->mat[3][2] += ballSpeed;
+                    }
+                }
             }
         }
         
-        if (gravityOn)
-            activate_gravity(window);
+        fruits->velToMatrixFruits(current_frame * 1.0f);
+
+
+        newGravity(*fruits, current_frame);
 
         // Clear the buffer
-        glClearColor(0.85f, 0.85f, 0.85f, 1.0f);
+        glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
         // view/projection transformations
         projection = glm::perspective(glm::radians(camera_fovy), (float)winWidth / (float)winHeight, _Z_NEAR, _Z_FAR);
@@ -845,19 +1024,40 @@ int main()
 
         // render the loaded model
         glm::vec3 aColor = glm::vec3 (0.9f, 0.9f, 0.9f);
-
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
         // bind Texture
-        glBindTexture(GL_TEXTURE_2D, texture);
+        // PLATFORM
+        glBindTexture(GL_TEXTURE_2D, texture_p); 
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAO_P);
 
+        
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDrawElements(GL_TRIANGLES, render_f.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, render_f_PLATFORM.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
+        // start of attempting sphere
+        
+        // texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+
+        // loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, VAO_S, VBO_S, EBO_S);
+        
+        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
+        drawFruit(fruits->fruits, aColor, myShader, texture_s);
+        // glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
+        // glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
+
+        // glBindTexture(GL_TEXTURE_2D, texture_s);
+
+        // glBindVertexArray(VAO_S);
+
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
+
+        // glBindVertexArray(0);
+        
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -866,13 +1066,12 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(myShader.ID);
+    // glDeleteVertexArrays(1, &VAO);
+    // glDeleteBuffers(1, &VBO);
+    // glDeleteProgram(myShader.ID);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
-

@@ -1,18 +1,19 @@
 {
-    "files.associations": {
-        "ostream": "cpp",
-        "vector": "cpp",
-        "type_traits": "cpp",
-        "unordered_map": "cpp",
-        "format": "cpp",
-        "list": "cpp",
-        "xstring": "cpp",
-        "initializer_list": "cpp",
-        "xhash": "cpp",
-        "xtree": "cpp",
-        "xutility": "cpp",
-        "cmath": "cpp",
-        "iostream": "cpp",
-        "utility": "cpp"
-    }
+  "files.associations": {
+    "ostream": "cpp",
+    "vector": "cpp",
+    "type_traits": "cpp",
+    "unordered_map": "cpp",
+    "format": "cpp",
+    "list": "cpp",
+    "xstring": "cpp",
+    "initializer_list": "cpp",
+    "xhash": "cpp",
+    "xtree": "cpp",
+    "xutility": "cpp",
+    "cmath": "cpp",
+    "iostream": "cpp",
+    "utility": "cpp",
+    "forward_list": "cpp"
+  }
 }

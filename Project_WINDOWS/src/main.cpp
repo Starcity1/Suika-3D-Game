@@ -21,6 +21,8 @@
 #include "shader.h"
 #include "Mesh.h"
 
+#include <cstdlib>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -29,9 +31,10 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
+#include <time.h>
 // our stuff
 #include "fruits.h"
+#include "fruitstructs/blueberry.h"
 
 using namespace std;
 
@@ -64,7 +67,8 @@ float camera_angle = 45.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
 float cameraSpeed = 0.01f;
-
+float frameTime = 0;
+float prevFrame = 0;
 float delta_time = 0.0f; // Time between current frame and last frame
 float last_frame = 0.0f; // Time of last frame
 
@@ -205,14 +209,31 @@ void calcUVMapping(void)
     }
 }
 
-void newGravity(Fruits fruits)
+void newGravity(Fruits fruits, float current_frame)
 {
-    float current_frame = glfwGetTime();
 
     vector<Fruit*> fruitList = fruits.fruits;
-    for (int i = 0; i < fruitList.size(); i++) 
+    for (int i = 0; i < fruitList.size() - 1; i++) 
     {
-        fruitList[i]->velocity[1] -= current_frame;
+        float yPos = fruitList[i]->mat[3][1] + (fruitList[i]->velocity[1] - current_frame * 0.2) * current_frame;
+        if (yPos < PLATFORM_BOT + fruitList[i]->radius * RADIUS_SCALE) {
+            continue;
+        } 
+        bool somethingBelow = false;
+        for (int j = 0; j < fruitList.size() - 1; j++) {
+            if (i != j) {
+                Fruit fruit = *fruitList[i];
+                glm::vec3 temp = fruitList[j]->mat[3];
+                float dist = sqrt(pow(fruit.mat[3][0] - temp[0], 2) + pow(yPos - temp[1], 2) + pow(fruit.mat[3][2] - temp[2], 2));
+                if (dist <= fruitList[j]->radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
+                    somethingBelow = true;
+                    break;
+                }
+            }
+        }
+        if (!somethingBelow) {
+            fruitList[i]->velocity[1] -= current_frame * 0.2;
+        }
     }
 }
 
@@ -510,13 +531,13 @@ bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned
 ///         Functions for Manipulating 3D Model  
 ///=====================================================///
 
-void activate_gravity(GLFWwindow* window) {
-    // Calculate time change.
-    float current_frame = glfwGetTime();
+// void activate_gravity(GLFWwindow* window) {
+//     // Calculate time change.
+//     float current_frame = glfwGetTime();
     
-    // get current position.
-    glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
-}
+//     // get current position.
+//     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
+// }
 
 void RotateModel(float angle, glm::vec3 axis)
 {
@@ -797,6 +818,7 @@ int main()
 {
     // glfw: initialize and configure
     // ------------------------------
+    srand(time(NULL));
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -875,18 +897,22 @@ int main()
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0.5, 1,
+        0, 1, 0, 1,
     };
     
-    Watermelon* wa1 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::scale(glm::mat4(1), glm::vec3(0.2)));
-    Watermelon* wa2 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::scale(tempMove, glm::vec3(0.2)));
 
-    fruits->push_fruit(wa1);
-    fruits->push_fruit(wa2);
+    Blueberry* origin = new Blueberry();
+    // fruits->push_fruit(wa1);
+    fruits->push_fruit(origin);
 
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
     while (!glfwWindowShouldClose(window))
     {
+
+        float time = glfwGetTime();
+        frameTime = time;
+        float current_frame = frameTime - prevFrame;
+        prevFrame = time;
         // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
     
         // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
@@ -904,15 +930,25 @@ int main()
             // Special input to run the scene.
             if (key == GLFW_KEY_SPACE && pair.second == "PRESS")
             {
-                gravityOn = true;
+                int randFruit = rand() % 3; 
                 
-                fruits->push_fruit(new Fruit());
+                if (randFruit == 0) {
+                    fruits->push_fruit(new Blueberry());
+                }
+                else if (randFruit == 1) {
+                    fruits->push_fruit(new Cherry());
+                }
+                else if (randFruit == 2) {
+                    fruits->push_fruit(new Lime());
+                }
+
+                
                 pair.second = "";
                 cout << "GENERATING A BALL" << endl;
             }
 
             if (pair.second == "HOLD" || pair.second == "PRESS") {
-                
+
                 if (key == GLFW_KEY_A)
                 {
                     // Update camera to go left
@@ -928,21 +964,48 @@ int main()
                 {
                     // Move the camera forward
                     glm::vec3 forward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
-                    camera_position += _CAMERA_MOVE_SPEED * forward;
+                    camera_position -= _CAMERA_MOVE_SPEED * forward;
                 }
                 if (key == GLFW_KEY_S)
                 {
                     // Move the camera backward
                     glm::vec3 backward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
-                    camera_position -= _CAMERA_MOVE_SPEED * backward;
+                    camera_position += _CAMERA_MOVE_SPEED * backward;
+                }
+                float ballSpeed = 0.001;
+                float extraSpace = 0.05;
+                Fruit* curFruit = fruits->fruits[fruits->fruits.size() - 1]; 
+                if (key == GLFW_KEY_LEFT)
+                {
+                    if (curFruit->mat[3][0] > PLATFORM_LEFT + curFruit->radius * RADIUS_SCALE + extraSpace){
+                        curFruit->mat[3][0] -= ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_RIGHT)
+                {
+                    if (curFruit->mat[3][0] < PLATFORM_RIGHT - curFruit->radius * RADIUS_SCALE - extraSpace){
+                        curFruit->mat[3][0] += ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_UP)
+                {
+                    if (curFruit->mat[3][2] > PLATFORM_UP + curFruit->radius * RADIUS_SCALE + extraSpace){
+                        curFruit->mat[3][2] -= ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_DOWN)
+                {
+                    if (curFruit->mat[3][2] < PLATFORM_DOWN - curFruit->radius * RADIUS_SCALE - extraSpace){
+                        curFruit->mat[3][2] += ballSpeed;
+                    }
                 }
             }
         }
-        float current_frame = glfwGetTime();
-        fruits->velToMatrixFruits(current_frame * 0.000000009f);
-        if (gravityOn)
-            activate_gravity(window);
-            newGravity(*fruits);
+        
+        fruits->velToMatrixFruits(current_frame * 1.0f);
+
+
+        newGravity(*fruits, current_frame);
 
         // Clear the buffer
         glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
@@ -966,7 +1029,7 @@ int main()
 
         // bind Texture
         // PLATFORM
-        glBindTexture(GL_TEXTURE_2D, texture_p);
+        glBindTexture(GL_TEXTURE_2D, texture_p); 
 
         glBindVertexArray(VAO_P);
 
@@ -1012,4 +1075,3 @@ int main()
     glfwTerminate();
     return 0;
 }
-

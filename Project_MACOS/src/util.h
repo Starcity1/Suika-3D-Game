@@ -13,6 +13,7 @@
 // Texture paths.
 #define PATH ".."
 #define PLATFORM_PATH       "/data/platform.obj"
+#define SPHERE_PATH       "/data/sphere.obj"
 #define GLASS_TEXTURE       "/data/glass.png"
 #define BASE_TEXTURE        "/data/texture_stone.png"
 #define APPLE_TEXTURE       "/Blenders/apple.png"
