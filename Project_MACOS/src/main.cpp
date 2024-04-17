@@ -34,14 +34,13 @@
 #include <time.h>
 // our stuff
 #include "fruits.h"
-#include "fruitstructs/blueberry.h"
 
 using namespace std;
 
 
 #define MAX_BUFFER_SIZE            1024
 
-#define _CAMERA_ROTATE_FACTOR       0.05f
+#define _CAMERA_ROTATE_FACTOR       0.1f
 
 #define _ROTATE_FACTOR              0.005f
 #define _SCALE_FACTOR               0.01f
@@ -63,6 +62,7 @@ unsigned int winHeight = 600;
 glm::vec3 camera_position = glm::vec3 (0.0f, 0.0f, 3.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+const float _CAMERA_MOVE_SPEED = 0.02f;
 float camera_angle = 45.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
@@ -147,51 +147,6 @@ void calcPlaneMapping(void)
 }
 
 
-void calcCylindricalMapping(void)
-{ 
-  for(auto& vertex : myObject.vertices)
-  {
-    float x = vertex.v[0];
-    float y = vertex.v[1];
-    float z = vertex.v[2];
-    
-    // Calculating angle
-
-    float theta = glm::atan(z, x);
-
-    // Assigning final values to texture mapping
-
-    vertex.t[0] = (PI + theta) / (2 * PI);
-    vertex.t[1] = y + 0.5;
-  }  
-}
-
-
-void calcSphereMapping(void)
-{
-   for(auto& vertex : myObject.vertices)
-   {
-        float x = vertex.v[0];
-        float y = vertex.v[1];
-        float z = vertex.v[2];
-
-        // Calculating angles
-        float rho = glm::sqrt(
-            glm::pow(x, 2) +
-            glm::pow(y, 2) +
-            glm::pow(z, 2)
-        );
-        float theta = glm::atan(z,x);
-        float phi = glm::atan(y, rho);
-
-        // Assigning final values to texture mapping
-
-        vertex.t[0] = (PI + theta) / (2 * PI);
-        vertex.t[1] = phi / PI;
-
-   }
-}
-
 void calcUVMapping(void)
 {
     for(auto& vertex : myObject.vertices)
@@ -207,6 +162,7 @@ void calcUVMapping(void)
         vertex.t[1] = v;
     }
 }
+
 
 void newGravity(Fruits fruits, float current_frame)
 {
@@ -296,7 +252,6 @@ void scaleToUnitBox(Object& object)
 }
 
 
-// TODO: Modify function to load all objects.
 int LoadInput(Object& object, string filename)
 {
     /////////////////////////////////////////////////////
@@ -459,7 +414,7 @@ int LoadInput(Object& object, string filename)
 }
 
 
-//TODO: Modify function such that ALL objects can be
+
 bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned>& render_f)
 {
     if (0 == object.vertices.size())
@@ -683,31 +638,30 @@ unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsig
 
     glBindVertexArray(0);
 
-    // load and create a texture
-    // -------------------------
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // set the texture wrapping parameters
+    // // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
     // set texture filtering parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     return texture;
 }
 
 ///=========================================================================================///
 ///                                      TEXTURE HANDLING
 ///=========================================================================================///
-bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, const char * path, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
 {
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load((path), &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -715,10 +669,12 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
         {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
+            cout << "Loading texture " << path << endl;
         }
         catch(...)
         {
-            perror("Could not load texture");
+            string error_msg = "Could not load texture " + std::string(path);
+            perror((const char *) error_msg.c_str());
         }
     }
     else
@@ -733,8 +689,7 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
     // render loop
     // -----------
 
-    // Render projected texture in.
-    calcSphereMapping();
+
     CreateRenderData(object, render_ver, render_f);
 
     // load data into vertex buffers
@@ -749,7 +704,7 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
 ///                                   Draw Fruit Function
 ///=========================================================================================///
 
-void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigned int texture_s) 
+void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader) 
 {
     for (int i = 0; i < fruits.size(); i++)
     {
@@ -760,7 +715,7 @@ void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigne
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &tempMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
-        glBindTexture(GL_TEXTURE_2D, texture_s);
+        glBindTexture(GL_TEXTURE_2D, fruits[i]->texture.id);
 
         glBindVertexArray(VAO_S);
 
@@ -827,16 +782,16 @@ int main()
 
     unsigned int texture_p = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, VAO_P, VBO_P, EBO_P);
     
-    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
+    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, GLASS_TEXTURE, myShader, VAO_P, VBO_P, EBO_P);
     
     // SPHERE
     LoadInput(sphere, SPHERE_PATH);
 
     CreateRenderData(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
 
-    unsigned int texture_s = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
+    renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
     
-    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_S, VBO_S, EBO_S);
+    loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, BLUEBRRY_TEXTURE, myShader, VAO_S, VBO_S, EBO_S);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
@@ -871,9 +826,6 @@ int main()
         // -----
         processInput(window);
 
-        // Update camera position.
-        const float _CAMERA_MOVE_SPEED = 0.02f;
-
         for(auto& pair : keys)
         {
             int key = pair.first;
@@ -891,44 +843,40 @@ int main()
                 else if (randFruit == 2) {
                     fruits->push_fruit(new Lime());
                 }
-
-                
+            
                 pair.second = "";
                 cout << "GENERATING A BALL" << endl;
             }
 
             if (pair.second == "HOLD" || pair.second == "PRESS") {
 
-                if (key == GLFW_KEY_A)
+                 if (key == GLFW_KEY_A)
                 {
                     // Update camera to go left
                     camera_angle = (camera_angle + _CAMERA_ROTATE_FACTOR);
-                    camera_position = (camera_radius * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_radius, glm::sin(glm::radians(camera_angle))));
-                    cout << glm::to_string(camera_position) << endl;
+                    camera_position = camera_radius * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_radius, glm::sin(glm::radians(camera_angle)));
                 }
                 if (key == GLFW_KEY_D)
                 {
                     camera_angle = (camera_angle - _CAMERA_ROTATE_FACTOR);
-                    camera_position = (camera_radius * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_radius, glm::sin(glm::radians(camera_angle))));
-                    cout << glm::to_string(camera_position) << endl;
+                    camera_position = camera_radius * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_radius, glm::sin(glm::radians(camera_angle)));
                 }
                 if (key == GLFW_KEY_W)
                 {
                     // Move the camera forward
-                    glm::vec3 forward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
+                    glm::vec3 forward = glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle)));
                     camera_position -= _CAMERA_MOVE_SPEED * forward;
-                    camera_radius = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[1]));
-                    cout << glm::to_string(camera_position) << endl;
+                    camera_radius = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[2]));
                 }
                 if (key == GLFW_KEY_S)
                 {
                     // Move the camera backward
-                    glm::vec3 backward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
+                    glm::vec3 backward = glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle)));
                     camera_position += _CAMERA_MOVE_SPEED * backward;
-                    camera_radius = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[1]));
-                    cout << glm::to_string(camera_position) << endl;
+                    camera_radius = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[2]));
                 }
-                float ballSpeed = 0.001;
+
+                float ballSpeed = 0.01;
                 float extraSpace = 0.05;
                 Fruit* curFruit = fruits->fruits[fruits->fruits.size() - 1]; 
                 if (key == GLFW_KEY_LEFT)
@@ -997,7 +945,7 @@ int main()
         // start of attempting sphere
         
         aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
-        drawFruit(fruits->fruits, aColor, myShader, texture_s);
+        drawFruit(fruits->fruits, aColor, myShader);
         
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
