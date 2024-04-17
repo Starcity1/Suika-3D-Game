@@ -77,6 +77,7 @@ struct Fruit
     void GJK(Fruit& fruit) {
         float dist = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
         if (dist <= radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
+            glm::vec4 dir = glm::vec4(fruit.mat[3][0] - mat[3][0], fruit.mat[3][1] - mat[3][1], fruit.mat[3][2] - mat[3][2], 0);
             float velM = 0.9;
             float tempX = velocity[0];
 
@@ -91,7 +92,7 @@ struct Fruit
             velocity[1] = 0;
             fruit.velocity[1] = 0;
 
-            mat[3] += glm::vec4(velocity[0], velocity[1], velocity[2], 0) * radius * 0.15f;
+            mat[3] += -0.05f * dir * radius;
         }
     }
     // handles movement
