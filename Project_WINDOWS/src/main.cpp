@@ -210,9 +210,27 @@ void newGravity(Fruits fruits, float current_frame)
 {
 
     vector<Fruit*> fruitList = fruits.fruits;
-    for (int i = 0; i < fruitList.size(); i++) 
+    for (int i = 0; i < fruitList.size() - 1; i++) 
     {
-        fruitList[i]->velocity[1] -= current_frame * 0.2;
+        float yPos = fruitList[i]->mat[3][1] + (fruitList[i]->velocity[1] - current_frame * 0.2) * current_frame;
+        if (yPos < PLATFORM_BOT + fruitList[i]->radius * RADIUS_SCALE) {
+            continue;
+        } 
+        bool somethingBelow = false;
+        for (int j = 0; j < fruitList.size() - 1; j++) {
+            if (i != j) {
+                Fruit fruit = *fruitList[i];
+                glm::vec3 temp = fruitList[j]->mat[3];
+                float dist = sqrt(pow(fruit.mat[3][0] - temp[0], 2) + pow(yPos - temp[1], 2) + pow(fruit.mat[3][2] - temp[2], 2));
+                if (dist <= fruitList[j]->radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
+                    somethingBelow = true;
+                    break;
+                }
+            }
+        }
+        if (!somethingBelow) {
+            fruitList[i]->velocity[1] -= current_frame * 0.2;
+        }
     }
 }
 
@@ -912,7 +930,7 @@ int main()
                 
                 gravityOn = true;
                 
-                fruits->push_fruit(new Fruit({ 0.2, glm::vec3(1), glm::vec3({-1, -1, -1}), "", glm::scale(tempMove, glm::vec3(0.2)) }));
+                fruits->push_fruit(new Fruit({ 0.5, glm::vec3(1), glm::vec3({-1, -1, -1}), "", glm::scale(tempMove, glm::vec3(0.5)) }));
                 pair.second = "";
                 cout << "GENERATING A BALL" << endl;
             }

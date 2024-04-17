@@ -74,53 +74,95 @@ struct Fruit
 
     virtual string getTexture(){return texture;} // getter function
 
-    void GJK(Fruit& fruit) {
-        float dist = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
+    bool GJK(Fruit& fruit, glm::vec4& temp) {
+        float dist = sqrt(pow(fruit.mat[3][0] - temp[0], 2) + pow(fruit.mat[3][1] - temp[1], 2) + pow(fruit.mat[3][2] - temp[2], 2));
         if (dist <= radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
-            glm::vec4 dir = glm::vec4(fruit.mat[3][0] - mat[3][0], fruit.mat[3][1] - mat[3][1], fruit.mat[3][2] - mat[3][2], 0);
-            float velM = 0.9;
-            float tempX = velocity[0];
+            // glm::vec4 dir = glm::vec4(fruit.mat[3][0] - mat[3][0], fruit.mat[3][1] - mat[3][1], fruit.mat[3][2] - mat[3][2], 0);
+            // float velM = 0.9;
+            // float tempX = velocity[0];
 
-            velocity[0] = fruit.velocity[0] * velM; 
-            fruit.velocity[0] = tempX * velM;
+            // velocity[0] = fruit.velocity[0] * velM; 
+            // fruit.velocity[0] = tempX * velM;
 
-            float tempZ = velocity[2];
+            // float tempZ = velocity[2];
 
-            velocity[2] = fruit.velocity[2] * velM; 
-            fruit.velocity[2] = tempZ * velM;
+            // velocity[2] = fruit.velocity[2] * velM; 
+            // fruit.velocity[2] = tempZ * velM;
 
-            velocity[1] = 0;
-            fruit.velocity[1] = 0;
+            // float tempY = velocity[1];
 
-            mat[3] += -0.05f * dir * radius;
+            // velocity[1] = fruit.velocity[1];
+            // fruit.velocity[1] = tempY;
+
+            float nx = (fruit.mat[3][0] - mat[3][0]) / dist;
+            float ny = (fruit.mat[3][1] - mat[3][1]) / dist;
+            float nz = (fruit.mat[3][2] - mat[3][2]) / dist;
+
+            // Normal components of velocity
+            float v1n = velocity[0] * nx + velocity[1] * ny + velocity[2] * nz;
+            float v2n = fruit.velocity[0] * nx + fruit.velocity[1] * ny + fruit.velocity[2] * nz;
+
+            // Updated normal velocities after collision
+            float v1n_new = (v1n * (radius - fruit.radius) + 2 * fruit.radius * v2n) / (radius + fruit.radius);
+            float v2n_new = (v2n * (fruit.radius - radius) + 2 * radius * v1n) / (radius + fruit.radius);
+
+            // Update velocities
+            velocity[0] = velocity[0] + (v1n_new - v1n) * nx;
+            velocity[1] = velocity[1] + (v1n_new - v1n) * ny * 0.9;
+            velocity[2] = velocity[2] + (v1n_new - v1n) * nz;
+
+            fruit.velocity[0] = fruit.velocity[0] + (v2n_new - v2n) * nx;
+            fruit.velocity[1] = fruit.velocity[1] + (v2n_new - v2n) * ny * 0.9;
+            fruit.velocity[2] = fruit.velocity[2] + (v2n_new - v2n) * nz;
+            return true;
         }
+
+        return false;
     }
     // handles movement
     void velToMatrix(float current_frame, vector<Fruit*>& fruits, int curI) {
         glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
 
         float velModifier = -0.5;
+        bool didTouch = false;
+        for (int i = 0; i < fruits.size() - 1; i++) {
+            if (i != curI) {
+                if (this->GJK(*fruits[i], temp)) {
+                    didTouch = true;
+                }
+            }
+        }
+        if (didTouch) {
+            return;
+        }
         if (temp[1] >= PLATFORM_BOT + radius * RADIUS_SCALE) {
             mat[3][1] = temp[1];
         } else {
             velocity = velocity * 0.999f;
+            velocity[1] = -0.01f * velocity[1];
+            mat[3][1] = PLATFORM_BOT + radius * RADIUS_SCALE;
         }
-        if (mat[3][0] > PLATFORM_LEFT + radius * RADIUS_SCALE && mat[3][0] < PLATFORM_RIGHT - radius * RADIUS_SCALE) {
+        if (temp[0] >= PLATFORM_LEFT + radius * RADIUS_SCALE && temp[0] <= PLATFORM_RIGHT - radius * RADIUS_SCALE) {
             mat[3][0] = temp[0];
         } else {
             velocity[0] = velModifier * velocity[0];
-            mat[3][0] += velocity[0] * radius * 0.15;
+            if (temp[0] < PLATFORM_LEFT + radius * RADIUS_SCALE) {
+                mat[3][0] = PLATFORM_LEFT + radius * RADIUS_SCALE;
+            } 
+            if (temp[0] > PLATFORM_RIGHT - radius * RADIUS_SCALE) {
+                mat[3][0] = PLATFORM_RIGHT - radius * RADIUS_SCALE;
+            }
         }
-        if (mat[3][2] > PLATFORM_UP + radius * RADIUS_SCALE && mat[3][2] < PLATFORM_DOWN - radius * RADIUS_SCALE) {
+        if (temp[2] >= PLATFORM_UP + radius * RADIUS_SCALE && temp[2] <= PLATFORM_DOWN - radius * RADIUS_SCALE) {
             mat[3][2] = temp[2];
         } else {
             velocity[2] = velModifier * velocity[2];
-            mat[3][2] += velocity[2] * radius * 0.15;
-        }
 
-        for (int i = 0; i < fruits.size() - 1; i++) {
-            if (i != curI) {
-                this->GJK(*fruits[i]);
+            if (temp[2] < PLATFORM_UP + radius * RADIUS_SCALE) {
+                mat[3][2] = PLATFORM_UP + radius * RADIUS_SCALE;
+            }
+            if (temp[2] > PLATFORM_DOWN - radius * RADIUS_SCALE) {
+                mat[3][2] = PLATFORM_DOWN - radius * RADIUS_SCALE;
             }
         }
     }
