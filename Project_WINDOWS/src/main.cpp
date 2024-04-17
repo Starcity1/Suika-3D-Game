@@ -900,11 +900,10 @@ int main()
         0, 1, 0, 1,
     };
     
-    Watermelon* wa1 = new Watermelon(0.2, glm::vec3(1), glm::vec3(0), "", glm::scale(glm::mat4(1), glm::vec3(0.2)));
-    Watermelon* wa2 = new Watermelon(0.6, glm::vec3(1), glm::vec3(0), "", glm::scale(tempMove, glm::vec3(0.6)));
 
+    Blueberry* origin = new Blueberry();
     // fruits->push_fruit(wa1);
-    fruits->push_fruit(wa2);
+    fruits->push_fruit(origin);
 
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
     while (!glfwWindowShouldClose(window))

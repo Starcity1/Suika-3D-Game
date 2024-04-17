@@ -171,27 +171,90 @@ struct Fruit
     }
 };
 
-struct Watermelon: Fruit
+struct Peach: Fruit
 {
     string getTexture() override {return WMELON_TEXTURE;}
 
     // base constructor
-    Watermelon()
+    Peach()
     {
-        radius = 1.5;
-        position = {0, 0, 0};
-        mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
+        glm::mat4 tempMove = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 1, 0, 1,
+        };
+        radius = 1.4;
+        mat = glm::scale(tempMove, glm::vec3(radius));
         texture = WMELON_TEXTURE;
-        velocity = {0, 0, 0};
+        velocity = {0, -1, 0};
     }
 
     // default constructor
-    Watermelon(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat)
+    Peach(glm::vec3 velocity, glm::mat4 mat)
     {
-        this->radius = radius;
-        this->position = position;
-        this->texture = texture;
+        this->radius = 1.4;
+        this->texture = WMELON_TEXTURE;
         this->mat = mat;
+        this->velocity = velocity;
+    }
+};
+
+struct Apple: Fruit
+{
+    string getTexture() override {return WMELON_TEXTURE;}
+
+    // base constructor
+    Apple()
+    {
+        glm::mat4 tempMove = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 1, 0, 1,
+        };
+        radius = 1.2;
+        mat = glm::scale(tempMove, glm::vec3(radius));
+        texture = WMELON_TEXTURE;
+        velocity = {0, -1, 0};
+    }
+
+    // default constructor
+    Apple(glm::vec3 velocity, glm::mat4 mat)
+    {
+        this->radius = 1.2;
+        this->texture = WMELON_TEXTURE;
+        this->mat = mat;
+        this->velocity = velocity;
+    }
+};
+
+struct Orange: Fruit
+{
+    string getTexture() override {return WMELON_TEXTURE;}
+
+    // base constructor
+    Orange()
+    {
+        glm::mat4 tempMove = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 1, 0, 1,
+        };
+        radius = 1.0;
+        mat = glm::scale(tempMove, glm::vec3(radius));
+        texture = WMELON_TEXTURE;
+        velocity = {0, -1, 0};
+    }
+
+    // default constructor
+    Orange(glm::vec3 velocity, glm::mat4 mat)
+    {
+        this->radius = 0.6;
+        this->texture = WMELON_TEXTURE;
+        this->mat = mat;
+        this->velocity = velocity;
     }
 };
 
@@ -209,19 +272,18 @@ struct Lime: Fruit
             0, 1, 0, 1,
         };
         radius = 0.8;
-        position = {0, 0, 0};
         mat = glm::scale(tempMove, glm::vec3(radius));
         texture = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
     // default constructor
-    Lime(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat)
+    Lime(glm::vec3 velocity, glm::mat4 mat)
     {
-        this->radius = radius;
-        this->position = position;
-        this->texture = texture;
+        this->radius = 0.8;
+        this->texture = WMELON_TEXTURE;
         this->mat = mat;
+        this->velocity = velocity;
     }
 };
 
@@ -285,10 +347,34 @@ class Fruits
 
 void merge(vector<Fruit*>& fruits, int i, int curI){
     // handle fruit deletions
-    if (fruits[curI]->radius == 0.4f) { // blueberry
+    if (fruits[curI]->radius == 0.4f) { // GENERATE CHERRY
         glm::vec4 pos = fruits[curI]->mat[3];
         delete fruits[curI];
         fruits[curI] = new Cherry();
+        fruits[curI]->mat[3] = pos;
+    }
+    else if (fruits[curI]->radius == 0.6f) { // GENERATE LIME
+        glm::vec4 pos = fruits[curI]->mat[3];
+        delete fruits[curI];
+        fruits[curI] = new Lime();
+        fruits[curI]->mat[3] = pos;
+    }
+    else if (fruits[curI]->radius == 0.8f) { // GENERATE ORANGE
+        glm::vec4 pos = fruits[curI]->mat[3];
+        delete fruits[curI];
+        fruits[curI] = new Orange();
+        fruits[curI]->mat[3] = pos;
+    }
+    else if (fruits[curI]->radius == 1.0f) { // GENERATE APPLE
+        glm::vec4 pos = fruits[curI]->mat[3];
+        delete fruits[curI];
+        fruits[curI] = new Apple();
+        fruits[curI]->mat[3] = pos;
+    }
+    else if (fruits[curI]->radius == 1.2f) { // GENERATE PEACH
+        glm::vec4 pos = fruits[curI]->mat[3];
+        delete fruits[curI];
+        fruits[curI] = new Peach();
         fruits[curI]->mat[3] = pos;
     }
     fruits.erase(fruits.begin() + i);
