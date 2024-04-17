@@ -64,8 +64,7 @@ float camera_angle = 45.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
 float cameraSpeed = 0.01f;
-float frameTime = 0;
-float prevFrame = 0;
+
 float delta_time = 0.0f; // Time between current frame and last frame
 float last_frame = 0.0f; // Time of last frame
 
@@ -206,8 +205,9 @@ void calcUVMapping(void)
     }
 }
 
-void newGravity(Fruits fruits, float current_frame)
+void newGravity(Fruits fruits)
 {
+    float current_frame = glfwGetTime();
 
     vector<Fruit*> fruitList = fruits.fruits;
     for (int i = 0; i < fruitList.size(); i++) 
@@ -510,13 +510,13 @@ bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned
 ///         Functions for Manipulating 3D Model  
 ///=====================================================///
 
-// void activate_gravity(GLFWwindow* window) {
-//     // Calculate time change.
-//     float current_frame = glfwGetTime();
+void activate_gravity(GLFWwindow* window) {
+    // Calculate time change.
+    float current_frame = glfwGetTime();
     
-//     // get current position.
-//     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
-// }
+    // get current position.
+    glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
+}
 
 void RotateModel(float angle, glm::vec3 axis)
 {
@@ -887,11 +887,6 @@ int main()
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
     while (!glfwWindowShouldClose(window))
     {
-
-        float time = glfwGetTime();
-        frameTime = time;
-        float current_frame = frameTime - prevFrame;
-        prevFrame = time;
         // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
     
         // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
@@ -943,12 +938,11 @@ int main()
                 }
             }
         }
-        
-        fruits->velToMatrixFruits(current_frame * 1.0f);
-
+        float current_frame = glfwGetTime();
+        fruits->velToMatrixFruits(current_frame * 0.000000009f);
         if (gravityOn)
-            // activate_gravity(window);
-            newGravity(*fruits, current_frame);
+            activate_gravity(window);
+            newGravity(*fruits);
 
         // Clear the buffer
         glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
