@@ -121,8 +121,8 @@ struct Fruit
     }
     // handles movement
     void velToMatrix(float current_frame, vector<Fruit*>& fruits, int curI) {
+    float threshold = 0.1;
         glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
-
         float velModifier = -0.5;
         bool didTouch = false;
         for (int i = 0; i < fruits.size() - 1; i++) {
@@ -138,7 +138,7 @@ struct Fruit
         if (temp[1] >= PLATFORM_BOT + radius * RADIUS_SCALE) {
             mat[3][1] = temp[1];
         } else {
-            velocity = velocity * 0.999f;
+            velocity = velocity * 0.80f;
             velocity[1] = -0.01f * velocity[1];
             mat[3][1] = PLATFORM_BOT + radius * RADIUS_SCALE;
         }
