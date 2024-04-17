@@ -67,6 +67,7 @@ float camera_angle = 45.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
 float cameraSpeed = 0.01f;
+float camera_radius = 3.0f;
 float frameTime = 0;
 float prevFrame = 0;
 float delta_time = 0.0f; // Time between current frame and last frame
@@ -93,7 +94,6 @@ Object myObject;
 vector<Object> myObjects;
 
 Object platform;
-
 Object sphere;
 
 // render
@@ -115,8 +115,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 
 ///=========================================================================================///
-///                    Functions to be filled in for Assignment 3    
-///          IMPORTANT: you ONLY need to work on these functions in this section      
+///                    TEXTURE MAPPING FUNCTIONS    
 ///=========================================================================================///
 
 
@@ -241,6 +240,7 @@ void newGravity(Fruits fruits, float current_frame)
 ///                            Functions to Load and Render a 3D Model 
 ///=========================================================================================///
 
+
 //// scale the model to the same size
 void scaleToUnitBox(Object& object)
 {
@@ -294,6 +294,7 @@ void scaleToUnitBox(Object& object)
     object.bBox.vSize[1] = vBoxSize[1] * modelScale;
     object.bBox.vSize[2] = vBoxSize[2] * modelScale;
 }
+
 
 // TODO: Modify function to load all objects.
 int LoadInput(Object& object, string filename)
@@ -457,6 +458,7 @@ int LoadInput(Object& object, string filename)
     return 0;
 }
 
+
 //TODO: Modify function such that ALL objects can be
 bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned>& render_f)
 {
@@ -497,48 +499,6 @@ bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned
 }
 
 
-///=====================================================///
-///         Functions for Moving Camera
-///=====================================================///
-
-// void update_camera_position(GLFWwindow* window)
-// {
-//     float currentFrame = glfwGetTime();
-//     delta_time = currentFrame - last_frame;
-//     last_frame = currentFrame;
-
-//     float cameraSpeedMultiplier = cameraSpeed * delta_time;
-
-//     if (keys[GLFW_KEY_W]) {
-//         camera_position += glm::normalize(camera_up) * cameraSpeedMultiplier;
-//         cout << "up!" << endl;
-//     }
-//     if (keys[GLFW_KEY_S]) {
-//         camera_position -= glm::normalize(camera_up) * cameraSpeedMultiplier;
-//         cout << "down!" << endl;
-//     }
-//     if (keys[GLFW_KEY_A]) {
-//         camera_position -= glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
-//         cout << "left!" << endl;
-//     }
-//     if (keys[GLFW_KEY_D]) {
-//         camera_position += glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
-//         cout << "right!" << endl;
-//     }
-// }
-
-///=====================================================///
-///         Functions for Manipulating 3D Model  
-///=====================================================///
-
-// void activate_gravity(GLFWwindow* window) {
-//     // Calculate time change.
-//     float current_frame = glfwGetTime();
-    
-//     // get current position.
-//     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
-// }
-
 void RotateModel(float angle, glm::vec3 axis)
 {
     glm::vec3 rotateCenter = glm::vec3(modelMatrix[3][0], modelMatrix[3][1], modelMatrix[3][2]);
@@ -551,6 +511,7 @@ void RotateModel(float angle, glm::vec3 axis)
     modelMatrix = rotateMatrix * modelMatrix;
 }
 
+
 void TranslateModel(glm::vec3 transVec)
 {
     glm::mat4 translateMatrix = glm::mat4(1.0f);
@@ -558,6 +519,7 @@ void TranslateModel(glm::vec3 transVec)
 
     modelMatrix = translateMatrix * modelMatrix;
 }
+
 
 void ScaleModel(float scale)
 {
@@ -840,15 +802,6 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
-    // Sets mouse_button_callback() function as handler when mouse press event happens.
-    // glfwSetMouseButtonCallback(window, mouse_button_callback);
-    // Sets cursor_pos_callback() function as handler when press event happens.
-    // glfwSetCursorPosCallback(window, cursor_pos_callback);
-    // Sets scroll_callback() function as handler when scroll event happens.
-    // glfwSetScrollCallback(window, scroll_callback);
-
-    // tell GLFW to capture the mouse
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -913,15 +866,12 @@ int main()
         frameTime = time;
         float current_frame = frameTime - prevFrame;
         prevFrame = time;
-        // unsigned int texture = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
-    
-        // loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
+
         // input
         // -----
         processInput(window);
 
         // Update camera position.
-        // update_camera_position(window);
         const float _CAMERA_MOVE_SPEED = 0.02f;
 
         for(auto& pair : keys)
@@ -953,24 +903,30 @@ int main()
                 {
                     // Update camera to go left
                     camera_angle = (camera_angle + _CAMERA_ROTATE_FACTOR);
-                    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+                    camera_position = (camera_radius * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_radius, glm::sin(glm::radians(camera_angle))));
+                    cout << glm::to_string(camera_position) << endl;
                 }
                 if (key == GLFW_KEY_D)
                 {
                     camera_angle = (camera_angle - _CAMERA_ROTATE_FACTOR);
-                    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+                    camera_position = (camera_radius * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_radius, glm::sin(glm::radians(camera_angle))));
+                    cout << glm::to_string(camera_position) << endl;
                 }
                 if (key == GLFW_KEY_W)
                 {
                     // Move the camera forward
                     glm::vec3 forward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
                     camera_position -= _CAMERA_MOVE_SPEED * forward;
+                    camera_radius = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[1]));
+                    cout << glm::to_string(camera_position) << endl;
                 }
                 if (key == GLFW_KEY_S)
                 {
                     // Move the camera backward
                     glm::vec3 backward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
                     camera_position += _CAMERA_MOVE_SPEED * backward;
+                    camera_radius = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[1]));
+                    cout << glm::to_string(camera_position) << endl;
                 }
                 float ballSpeed = 0.001;
                 float extraSpace = 0.05;
@@ -1040,23 +996,8 @@ int main()
 
         // start of attempting sphere
         
-        // texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
-
-        // loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, VAO_S, VBO_S, EBO_S);
-        
         aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
         drawFruit(fruits->fruits, aColor, myShader, texture_s);
-        // glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
-        // glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
-
-        // glBindTexture(GL_TEXTURE_2D, texture_s);
-
-        // glBindVertexArray(VAO_S);
-
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
-
-        // glBindVertexArray(0);
         
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -1066,9 +1007,11 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    // glDeleteVertexArrays(1, &VAO);
-    // glDeleteBuffers(1, &VBO);
-    // glDeleteProgram(myShader.ID);
+    glDeleteVertexArrays(1, &VAO_P);
+    glDeleteBuffers(1, &VBO_P);
+    glDeleteVertexArrays(1, &VAO_S);
+    glDeleteBuffers(1, &VBO_S);
+    glDeleteProgram(myShader.ID);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------

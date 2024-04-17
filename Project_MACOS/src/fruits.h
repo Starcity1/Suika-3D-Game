@@ -40,6 +40,18 @@ using namespace std;
 struct Fruit;
 void merge(vector<Fruit*>& fruits, int i, int curI);
 
+// Generating small Texture structure
+struct Texture
+{
+    const char * texture_path;
+    unsigned int id;
+    int width;
+    int height;
+    int rChannels;
+
+    Texture() : texture_path(BASE_TEXTURE) {}
+};
+
 struct Fruit 
 {
     // VARIABLES
@@ -49,7 +61,7 @@ struct Fruit
     glm::vec3 position;
     // model matrix
     glm::mat4 mat;
-    string texture;
+    Texture texture;
     // every frame our balls move by this velocity
     glm::vec3 velocity;
 
@@ -62,12 +74,12 @@ struct Fruit
         radius = 0;
         position = {0, 0, 0};
         mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
-        texture = "";
+        texture = Texture();
         velocity = {0, 0, 0};
     }
 
     // default constructor 
-    Fruit(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat)
+    Fruit(float radius, glm::vec3 position, glm::vec3 velocity, Texture texture, glm::mat4 mat)
     {
         this->radius = radius;
         this->position = position;
@@ -77,7 +89,7 @@ struct Fruit
     }
 
 
-    virtual string getTexture(){return texture;} // getter function
+    virtual string getTexture(){return texture.texture_path;} // getter function
 
     bool GJK(vector<Fruit*>& fruits, Fruit& fruit, glm::vec4& temp, int i, int curI) {
         float distToReal = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
@@ -186,7 +198,7 @@ struct Peach: Fruit
         };
         radius = 1.4;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -194,7 +206,7 @@ struct Peach: Fruit
     Peach(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.4;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -215,7 +227,7 @@ struct Apple: Fruit
         };
         radius = 1.2;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -223,7 +235,7 @@ struct Apple: Fruit
     Apple(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.2;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -244,7 +256,7 @@ struct Orange: Fruit
         };
         radius = 1.0;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -252,7 +264,7 @@ struct Orange: Fruit
     Orange(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.6;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -273,7 +285,7 @@ struct Lime: Fruit
         };
         radius = 0.8;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -281,7 +293,7 @@ struct Lime: Fruit
     Lime(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.8;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -302,7 +314,7 @@ struct Cherry: Fruit
         };
         radius = 0.6;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -310,7 +322,7 @@ struct Cherry: Fruit
     Cherry(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.6;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -328,7 +340,7 @@ class Fruits
         }
 
         // push_back function
-        void push_fruit(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat) 
+        void push_fruit(float radius, glm::vec3 position, glm::vec3 velocity, Texture texture, glm::mat4 mat) 
         {
             fruits.push_back(new Fruit(radius, position, velocity, texture, mat));
         }
