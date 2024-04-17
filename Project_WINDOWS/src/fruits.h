@@ -28,6 +28,7 @@
 
 #include <glm/gtx/string_cast.hpp> // For testing purposes.
 
+
 #define PLATFORM_BOT -1
 #define PLATFORM_LEFT -1.45
 #define PLATFORM_RIGHT 1.45
@@ -36,6 +37,8 @@
 #define RADIUS_SCALE 0.5
 
 using namespace std;
+struct Fruit;
+void merge(vector<Fruit*>& fruits, int i, int curI);
 
 struct Fruit 
 {
@@ -49,6 +52,8 @@ struct Fruit
     string texture;
     // every frame our balls move by this velocity
     glm::vec3 velocity;
+
+    bool beingErased = false;
 
     // FUNCTIONS
     // base constructor
@@ -74,26 +79,23 @@ struct Fruit
 
     virtual string getTexture(){return texture;} // getter function
 
-    bool GJK(Fruit& fruit, glm::vec4& temp) {
+    bool GJK(vector<Fruit*>& fruits, Fruit& fruit, glm::vec4& temp, int i, int curI) {
+        float distToReal = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
+        if (distToReal < radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
+            glm::vec4 dir = glm::vec4(fruit.mat[3][0] - mat[3][0], fruit.mat[3][1] - mat[3][1], fruit.mat[3][2] - mat[3][2], 0);
+            mat[3] = mat[3] - dir * 0.1f;
+            fruit.mat[3] = fruit.mat[3] + dir * 0.1f;
+            return true;
+        }
+
+
         float dist = sqrt(pow(fruit.mat[3][0] - temp[0], 2) + pow(fruit.mat[3][1] - temp[1], 2) + pow(fruit.mat[3][2] - temp[2], 2));
         if (dist <= radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
-            // glm::vec4 dir = glm::vec4(fruit.mat[3][0] - mat[3][0], fruit.mat[3][1] - mat[3][1], fruit.mat[3][2] - mat[3][2], 0);
-            // float velM = 0.9;
-            // float tempX = velocity[0];
-
-            // velocity[0] = fruit.velocity[0] * velM; 
-            // fruit.velocity[0] = tempX * velM;
-
-            // float tempZ = velocity[2];
-
-            // velocity[2] = fruit.velocity[2] * velM; 
-            // fruit.velocity[2] = tempZ * velM;
-
-            // float tempY = velocity[1];
-
-            // velocity[1] = fruit.velocity[1];
-            // fruit.velocity[1] = tempY;
-
+            if (fruit.radius == this->radius && !fruit.beingErased && !beingErased) {
+                beingErased = true;
+                fruit.beingErased = true;
+                merge(fruits, i, curI);
+            }
             float nx = (fruit.mat[3][0] - mat[3][0]) / dist;
             float ny = (fruit.mat[3][1] - mat[3][1]) / dist;
             float nz = (fruit.mat[3][2] - mat[3][2]) / dist;
@@ -121,17 +123,18 @@ struct Fruit
     }
     // handles movement
     void velToMatrix(float current_frame, vector<Fruit*>& fruits, int curI) {
-    float threshold = 0.1;
+        float threshold = 0.1;
         glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
         float velModifier = -0.5;
         bool didTouch = false;
         for (int i = 0; i < fruits.size() - 1; i++) {
             if (i != curI) {
-                if (this->GJK(*fruits[i], temp)) {
+                if (this->GJK(fruits, *fruits[i], temp, i, curI)) {
                     didTouch = true;
                 }
             }
         }
+        beingErased = false;
         if (didTouch) {
             return;
         }
@@ -175,7 +178,7 @@ struct Watermelon: Fruit
     // base constructor
     Watermelon()
     {
-        radius = 0;
+        radius = 1.5;
         position = {0, 0, 0};
         mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
         texture = WMELON_TEXTURE;
@@ -192,7 +195,64 @@ struct Watermelon: Fruit
     }
 };
 
+struct Lime: Fruit
+{
+    string getTexture() override {return WMELON_TEXTURE;}
 
+    // base constructor
+    Lime()
+    {
+        glm::mat4 tempMove = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 1, 0, 1,
+        };
+        radius = 0.8;
+        position = {0, 0, 0};
+        mat = glm::scale(tempMove, glm::vec3(radius));
+        texture = WMELON_TEXTURE;
+        velocity = {0, -1, 0};
+    }
+
+    // default constructor
+    Lime(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat)
+    {
+        this->radius = radius;
+        this->position = position;
+        this->texture = texture;
+        this->mat = mat;
+    }
+};
+
+struct Cherry: Fruit
+{
+    string getTexture() override {return WMELON_TEXTURE;}
+
+    // base constructor
+    Cherry()
+    {
+        glm::mat4 tempMove = {
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 1, 0, 1,
+        };
+        radius = 0.6;
+        mat = glm::scale(tempMove, glm::vec3(radius));
+        texture = WMELON_TEXTURE;
+        velocity = {0, -1, 0};
+    }
+
+    // default constructor
+    Cherry(glm::vec3 velocity, glm::mat4 mat)
+    {
+        this->radius = 0.6;
+        this->texture = WMELON_TEXTURE;
+        this->mat = mat;
+        this->velocity = velocity;
+    }
+};
 
 class Fruits
 {
@@ -223,8 +283,14 @@ class Fruits
         }
 };
 
-
-
-
-
+void merge(vector<Fruit*>& fruits, int i, int curI){
+    // handle fruit deletions
+    if (fruits[curI]->radius == 0.4f) { // blueberry
+        glm::vec4 pos = fruits[curI]->mat[3];
+        delete fruits[curI];
+        fruits[curI] = new Cherry();
+        fruits[curI]->mat[3] = pos;
+    }
+    fruits.erase(fruits.begin() + i);
+}
 #endif

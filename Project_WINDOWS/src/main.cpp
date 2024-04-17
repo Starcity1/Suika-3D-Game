@@ -21,6 +21,8 @@
 #include "shader.h"
 #include "Mesh.h"
 
+#include <cstdlib>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -29,9 +31,10 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
+#include <time.h>
 // our stuff
 #include "fruits.h"
+#include "fruitstructs/blueberry.h"
 
 using namespace std;
 
@@ -815,6 +818,7 @@ int main()
 {
     // glfw: initialize and configure
     // ------------------------------
+    srand(time(NULL));
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -893,7 +897,7 @@ int main()
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0.8, 0, 1,
+        0, 1, 0, 1,
     };
     
     Watermelon* wa1 = new Watermelon(0.2, glm::vec3(1), glm::vec3(0), "", glm::scale(glm::mat4(1), glm::vec3(0.2)));
@@ -927,10 +931,19 @@ int main()
             // Special input to run the scene.
             if (key == GLFW_KEY_SPACE && pair.second == "PRESS")
             {
+                int randFruit = rand() % 3; 
                 
-                gravityOn = true;
+                if (randFruit == 0) {
+                    fruits->push_fruit(new Blueberry());
+                }
+                else if (randFruit == 1) {
+                    fruits->push_fruit(new Cherry());
+                }
+                else if (randFruit == 2) {
+                    fruits->push_fruit(new Lime());
+                }
+
                 
-                fruits->push_fruit(new Fruit({ 0.5, glm::vec3(1), glm::vec3({-1, -1, -1}), "", glm::scale(tempMove, glm::vec3(0.5)) }));
                 pair.second = "";
                 cout << "GENERATING A BALL" << endl;
             }
@@ -992,9 +1005,8 @@ int main()
         
         fruits->velToMatrixFruits(current_frame * 1.0f);
 
-        if (gravityOn)
-            // activate_gravity(window);
-            newGravity(*fruits, current_frame);
+
+        newGravity(*fruits, current_frame);
 
         // Clear the buffer
         glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
@@ -1018,7 +1030,7 @@ int main()
 
         // bind Texture
         // PLATFORM
-        glBindTexture(GL_TEXTURE_2D, texture_p);
+        glBindTexture(GL_TEXTURE_2D, texture_p); 
 
         glBindVertexArray(VAO_P);
 
