@@ -212,7 +212,7 @@ void newGravity(Fruits fruits, float current_frame)
     vector<Fruit*> fruitList = fruits.fruits;
     for (int i = 0; i < fruitList.size(); i++) 
     {
-        fruitList[i]->velocity[1] -= current_frame;
+        fruitList[i]->velocity[1] -= current_frame * 0.2;
     }
 }
 
@@ -875,13 +875,13 @@ int main()
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0.5, 1,
+        0, 0.8, 0, 1,
     };
     
-    Watermelon* wa1 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::scale(glm::mat4(1), glm::vec3(0.2)));
-    Watermelon* wa2 = new Watermelon(4, glm::vec3(1), glm::vec3(0), "", glm::scale(tempMove, glm::vec3(0.2)));
+    Watermelon* wa1 = new Watermelon(0.2, glm::vec3(1), glm::vec3(0), "", glm::scale(glm::mat4(1), glm::vec3(0.2)));
+    Watermelon* wa2 = new Watermelon(0.6, glm::vec3(1), glm::vec3(0), "", glm::scale(tempMove, glm::vec3(0.6)));
 
-    fruits->push_fruit(wa1);
+    // fruits->push_fruit(wa1);
     fruits->push_fruit(wa2);
 
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
@@ -909,9 +909,10 @@ int main()
             // Special input to run the scene.
             if (key == GLFW_KEY_SPACE && pair.second == "PRESS")
             {
+                
                 gravityOn = true;
                 
-                fruits->push_fruit(new Fruit());
+                fruits->push_fruit(new Fruit({ 0.2, glm::vec3(1), glm::vec3({-1, -1, -1}), "", glm::scale(tempMove, glm::vec3(0.2)) }));
                 pair.second = "";
                 cout << "GENERATING A BALL" << endl;
             }
@@ -933,13 +934,40 @@ int main()
                 {
                     // Move the camera forward
                     glm::vec3 forward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
-                    camera_position += _CAMERA_MOVE_SPEED * forward;
+                    camera_position -= _CAMERA_MOVE_SPEED * forward;
                 }
                 if (key == GLFW_KEY_S)
                 {
                     // Move the camera backward
                     glm::vec3 backward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
-                    camera_position -= _CAMERA_MOVE_SPEED * backward;
+                    camera_position += _CAMERA_MOVE_SPEED * backward;
+                }
+                float ballSpeed = 0.001;
+                float extraSpace = 0.05;
+                Fruit* curFruit = fruits->fruits[fruits->fruits.size() - 1]; 
+                if (key == GLFW_KEY_LEFT)
+                {
+                    if (curFruit->mat[3][0] > PLATFORM_LEFT + curFruit->radius * RADIUS_SCALE + extraSpace){
+                        curFruit->mat[3][0] -= ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_RIGHT)
+                {
+                    if (curFruit->mat[3][0] < PLATFORM_RIGHT - curFruit->radius * RADIUS_SCALE - extraSpace){
+                        curFruit->mat[3][0] += ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_UP)
+                {
+                    if (curFruit->mat[3][2] > PLATFORM_UP + curFruit->radius * RADIUS_SCALE + extraSpace){
+                        curFruit->mat[3][2] -= ballSpeed;
+                    }
+                }
+                if (key == GLFW_KEY_DOWN)
+                {
+                    if (curFruit->mat[3][2] < PLATFORM_DOWN - curFruit->radius * RADIUS_SCALE - extraSpace){
+                        curFruit->mat[3][2] += ballSpeed;
+                    }
                 }
             }
         }

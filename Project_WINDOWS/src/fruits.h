@@ -28,15 +28,26 @@
 
 #include <glm/gtx/string_cast.hpp> // For testing purposes.
 
+#define PLATFORM_BOT -1
+#define PLATFORM_LEFT -1.45
+#define PLATFORM_RIGHT 1.45
+#define PLATFORM_UP -1.45
+#define PLATFORM_DOWN 1.45
+#define RADIUS_SCALE 0.5
+
 using namespace std;
 
 struct Fruit 
 {
     // VARIABLES
+    // radius is equal to the float inside the scale function
     float radius;
+    // position is the value of the first 3 elements in the mat[3] matrix
     glm::vec3 position;
+    // model matrix
     glm::mat4 mat;
     string texture;
+    // every frame our balls move by this velocity
     glm::vec3 velocity;
 
     // FUNCTIONS
@@ -63,11 +74,28 @@ struct Fruit
 
     virtual string getTexture(){return texture;} // getter function
 
-    void velToMatrix(float current_frame) {
+    void velToMatrix(float current_frame, vector<Fruit*>& fruits, int i) {
         glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
-        if (temp[1] >= -1) {
-            mat[3] = temp;
-        } 
+
+        float velModifier = -0.5;
+        if (temp[1] >= PLATFORM_BOT + radius * RADIUS_SCALE) {
+            mat[3][1] = temp[1];
+        } else {
+            velocity = velocity * 0.999f;
+        }
+        if (mat[3][0] > PLATFORM_LEFT + radius * RADIUS_SCALE && mat[3][0] < PLATFORM_RIGHT - radius * RADIUS_SCALE) {
+            mat[3][0] = temp[0];
+        } else {
+            velocity[0] = velModifier * velocity[0];
+            mat[3][0] += velocity[0] * radius * 0.15;
+        }
+        if (mat[3][2] > PLATFORM_UP + radius * RADIUS_SCALE && mat[3][2] < PLATFORM_DOWN - radius * RADIUS_SCALE) {
+            mat[3][2] = temp[2];
+        } else {
+            velocity[2] = velModifier * velocity[2];
+            mat[3][2] += velocity[2] * radius * 0.15;
+        }
+
     }
 };
 
@@ -120,8 +148,8 @@ class Fruits
 
         // Mat Manipulator
         void velToMatrixFruits(float current_frame) {
-            for (int i = 0; i < fruits.size(); i++) {
-                fruits[i]->velToMatrix(current_frame);
+            for (int i = 0; i < fruits.size() - 1; i++) {
+                fruits[i]->velToMatrix(current_frame, fruits, i);
             }
         }
 };
