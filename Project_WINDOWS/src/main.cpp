@@ -823,6 +823,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    int points = 0;
 
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -900,7 +901,7 @@ int main()
         0, 1, 0, 1,
     };
     
-
+    
     Blueberry* origin = new Blueberry();
     // fruits->push_fruit(wa1);
     fruits->push_fruit(origin);
@@ -931,9 +932,8 @@ int main()
             if (key == GLFW_KEY_SPACE && pair.second == "PRESS")
             {
                 int randFruit = rand() % 3; 
-                
                 if (randFruit == 0) {
-                    fruits->push_fruit(new Blueberry());
+                    fruits->push_fruit(new Blueberry()); 
                 }
                 else if (randFruit == 1) {
                     fruits->push_fruit(new Cherry());
@@ -941,10 +941,10 @@ int main()
                 else if (randFruit == 2) {
                     fruits->push_fruit(new Lime());
                 }
-
+                points += fruits->fruits[fruits->fruits.size() - 2]->radius * 10;
                 
                 pair.second = "";
-                cout << "GENERATING A BALL" << endl;
+                cout << "Points: " << points << endl;
             }
 
             if (pair.second == "HOLD" || pair.second == "PRESS") {
@@ -1002,7 +1002,7 @@ int main()
             }
         }
         
-        fruits->velToMatrixFruits(current_frame * 1.0f);
+        fruits->velToMatrixFruits(current_frame * 1.0f, points);
 
 
         newGravity(*fruits, current_frame);
