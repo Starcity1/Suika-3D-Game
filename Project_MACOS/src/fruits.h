@@ -40,6 +40,18 @@ using namespace std;
 struct Fruit;
 void merge(vector<Fruit*>& fruits, int i, int curI, int& points);
 
+// Generating small Texture structure
+struct Texture
+{
+    string texture_path;
+    unsigned int id;
+    int width;
+    int height;
+    int rChannels;
+
+    Texture() : texture_path(BASE_TEXTURE) {}
+};
+
 struct Fruit 
 {
     // VARIABLES
@@ -49,7 +61,7 @@ struct Fruit
     glm::vec3 position;
     // model matrix
     glm::mat4 mat;
-    string texture;
+    Texture texture;
     // every frame our balls move by this velocity
     glm::vec3 velocity;
 
@@ -62,7 +74,7 @@ struct Fruit
         radius = 0;
         position = {0, 0, 0};
         mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
-        texture = "";
+        texture.texture_path = "";
         velocity = {0, 0, 0};
     }
 
@@ -71,15 +83,15 @@ struct Fruit
     {
         this->radius = radius;
         this->position = position;
-        this->texture = texture;
+        this->texture.texture_path = texture;
         this->velocity = velocity;
         this->mat = mat;
     }
 
 
-    virtual string getTexture(){return texture;} // getter function
+    virtual string getTexture(){return texture.texture_path;} // getter function
 
-    bool GJK(vector<Fruit*>& fruits, Fruit& fruit, glm::vec4& temp, int i, int curI, int& points) {
+       bool GJK(vector<Fruit*>& fruits, Fruit& fruit, glm::vec4& temp, int i, int curI, int& points) {
         float distToReal = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
         if (distToReal <= radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
             cout << "distToReal: " << distToReal << endl;
@@ -190,17 +202,17 @@ struct Watermelon: Fruit
             0, 0, 1, 0,
             0, 1, 0, 1,
         };
-        radius = 1.8;
+        radius = 1.4;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = PEACH_TEXTURE;
         velocity = {0, -1, 0};
     }
 
     // default constructor
     Watermelon(glm::vec3 velocity, glm::mat4 mat)
     {
-        this->radius = 1.8;
-        this->texture = WMELON_TEXTURE;
+        this->radius = 1.4;
+        this->texture.texture_path = PEACH_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -208,7 +220,7 @@ struct Watermelon: Fruit
 
 struct Coconut: Fruit
 {
-    string getTexture() override {return WMELON_TEXTURE;}
+    string getTexture() override {return PEACH_TEXTURE;}
 
     // base constructor
     Coconut()
@@ -219,17 +231,17 @@ struct Coconut: Fruit
             0, 0, 1, 0,
             0, 1, 0, 1,
         };
-        radius = 1.6;
+        radius = 1.4;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = PEACH_TEXTURE;
         velocity = {0, -1, 0};
     }
 
     // default constructor
     Coconut(glm::vec3 velocity, glm::mat4 mat)
     {
-        this->radius = 1.6;
-        this->texture = WMELON_TEXTURE;
+        this->radius = 1.4;
+        this->texture.texture_path = PEACH_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -250,7 +262,7 @@ struct Peach: Fruit
         };
         radius = 1.4;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -258,7 +270,7 @@ struct Peach: Fruit
     Peach(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.4;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -279,7 +291,7 @@ struct Apple: Fruit
         };
         radius = 1.2;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -287,7 +299,7 @@ struct Apple: Fruit
     Apple(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.2;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -308,7 +320,7 @@ struct Orange: Fruit
         };
         radius = 1.0;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -316,7 +328,7 @@ struct Orange: Fruit
     Orange(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.0;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -337,7 +349,7 @@ struct Lime: Fruit
         };
         radius = 0.8;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -345,7 +357,7 @@ struct Lime: Fruit
     Lime(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.8;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -366,7 +378,7 @@ struct Cherry: Fruit
         };
         radius = 0.6;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -374,7 +386,7 @@ struct Cherry: Fruit
     Cherry(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.6;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -395,7 +407,7 @@ struct Blueberry: Fruit
         };
         radius = 0.6;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture = WMELON_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -403,7 +415,7 @@ struct Blueberry: Fruit
     Blueberry(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.6;
-        this->texture = WMELON_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -484,4 +496,5 @@ void merge(vector<Fruit*>& fruits, int i, int curI, int& points){
     cout << "Points: " << points << endl;
     fruits.erase(fruits.begin() + i);
 }
+
 #endif

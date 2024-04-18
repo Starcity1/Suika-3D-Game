@@ -495,49 +495,6 @@ bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned
     }
 }
 
-
-///=====================================================///
-///         Functions for Moving Camera
-///=====================================================///
-
-// void update_camera_position(GLFWwindow* window)
-// {
-//     float currentFrame = glfwGetTime();
-//     delta_time = currentFrame - last_frame;
-//     last_frame = currentFrame;
-
-//     float cameraSpeedMultiplier = cameraSpeed * delta_time;
-
-//     if (keys[GLFW_KEY_W]) {
-//         camera_position += glm::normalize(camera_up) * cameraSpeedMultiplier;
-//         cout << "up!" << endl;
-//     }
-//     if (keys[GLFW_KEY_S]) {
-//         camera_position -= glm::normalize(camera_up) * cameraSpeedMultiplier;
-//         cout << "down!" << endl;
-//     }
-//     if (keys[GLFW_KEY_A]) {
-//         camera_position -= glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
-//         cout << "left!" << endl;
-//     }
-//     if (keys[GLFW_KEY_D]) {
-//         camera_position += glm::normalize(glm::cross(camera_target, camera_up)) * cameraSpeedMultiplier;
-//         cout << "right!" << endl;
-//     }
-// }
-
-///=====================================================///
-///         Functions for Manipulating 3D Model  
-///=====================================================///
-
-// void activate_gravity(GLFWwindow* window) {
-//     // Calculate time change.
-//     float current_frame = glfwGetTime();
-    
-//     // get current position.
-//     glm::vec3 gravity_vel_vector = glm::vec3(0.0f, -0.98f, 0.0f) * current_frame * 0.002f;
-// }
-
 void RotateModel(float angle, glm::vec3 axis)
 {
     glm::vec3 rotateCenter = glm::vec3(modelMatrix[3][0], modelMatrix[3][1], modelMatrix[3][2]);
@@ -822,6 +779,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     int points = 0;
 
 #ifdef __APPLE__
@@ -1001,8 +959,7 @@ int main()
             }
         }
         
-        fruits->velToMatrixFruits(current_frame * 1.0f, points);
-
+        fruits->velToMatrixFruits(current_frame * 1.0f, points) ;
 
         newGravity(*fruits, current_frame);
 
