@@ -40,7 +40,7 @@ using namespace std;
 
 #define MAX_BUFFER_SIZE            1024
 
-#define _CAMERA_ROTATE_FACTOR       0.05f
+#define _CAMERA_ROTATE_FACTOR       0.2f
 
 #define _ROTATE_FACTOR              0.005f
 #define _SCALE_FACTOR               0.01f
@@ -63,6 +63,7 @@ glm::vec3 camera_position = glm::vec3 (0.0f, 0.0f, 3.0f);
 glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 float camera_angle = 45.0f;
+float camera_rad = 3.0f;
 float camera_fovy = 45.0f;
 glm::mat4 projection;
 float cameraSpeed = 0.01f;
@@ -906,30 +907,32 @@ int main()
 
             if (pair.second == "HOLD" || pair.second == "PRESS") {
 
-                if (key == GLFW_KEY_A)
+               if (key == GLFW_KEY_A)
                 {
                     // Update camera to go left
                     camera_angle = (camera_angle + _CAMERA_ROTATE_FACTOR);
-                    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+                    camera_position = camera_rad * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_rad, glm::sin(glm::radians(camera_angle)));
                 }
                 if (key == GLFW_KEY_D)
                 {
                     camera_angle = (camera_angle - _CAMERA_ROTATE_FACTOR);
-                    camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
+                    camera_position = camera_rad * glm::vec3(glm::cos(glm::radians(camera_angle)), 3.0f / camera_rad, glm::sin(glm::radians(camera_angle)));
                 }
                 if (key == GLFW_KEY_W)
                 {
                     // Move the camera forward
-                    glm::vec3 forward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
+                    glm::vec3 forward = glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle)));
                     camera_position -= _CAMERA_MOVE_SPEED * forward;
+                    camera_rad = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[2]));
                 }
                 if (key == GLFW_KEY_S)
                 {
                     // Move the camera backward
-                    glm::vec3 backward = glm::normalize(glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle))));
+                    glm::vec3 backward = glm::vec3(glm::cos(glm::radians(camera_angle)), 0.0f, glm::sin(glm::radians(camera_angle)));
                     camera_position += _CAMERA_MOVE_SPEED * backward;
+                    camera_rad = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[2]));
                 }
-                float ballSpeed = 0.001;
+                float ballSpeed = 0.01;
                 float extraSpace = 0.05;
                 Fruit* curFruit = fruits->fruits[fruits->fruits.size() - 1]; 
                 if (key == GLFW_KEY_LEFT)
