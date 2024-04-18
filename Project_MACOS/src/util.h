@@ -12,6 +12,7 @@
 
 // Texture paths.
 #define PATH ".."
+#define SONG_PATH           "../data/スイカゲーム-suika-game-watermelon-game-bgm-made-with-Voicemod.mp3"
 #define PLATFORM_PATH       "../data/platform.obj"
 #define SPHERE_PATH         "../data/sphere.obj"
 #define GLASS_TEXTURE       "../data/glass.png"

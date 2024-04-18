@@ -7,8 +7,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 
-find_package(glfw3 REQUIRED)
+find_package(OpenAL REQUIRED)
+message(STATUS "Found openAL in ${OPENAL_LIBRARY}")
+include_directories(${OPENAL_INCLUDE_DIR})
+
+find_package(GLFW3 REQUIRED)
 message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
+include_directories(${GLFW3_INCLUDE_DIR})
 
 SET(LIBS ${GLFW3_LIBRARY})
 
@@ -17,11 +22,14 @@ file( GLOB SRCFILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
 
+        
 add_library(GLAD "src/glad.c")
 set(LIBS ${LIBS} GLAD)
 include_directories(${CMAKE_SOURCE_DIR}/includes)
 
 add_executable(Project src/main.cpp)
+target_link_libraries(Project OpenAL::OpenAL)
 target_link_libraries(Project PRIVATE glfw)
 target_link_libraries(Project ${LIBS})
+target_link_libraries(Project ${OPENAL_INCLUDE_DIR})
 target_link_libraries(Project ${GLFW3_LIBRARY})

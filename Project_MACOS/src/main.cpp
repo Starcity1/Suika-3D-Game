@@ -23,6 +23,12 @@
 
 #include <cstdlib>
 
+// Audio
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#define STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -88,12 +94,7 @@ vector<unsigned> render_f_PLATFORM;              // List of faces for rendering
 vector<float> render_ver_nor_tex_SPHERE;       // List of points and normals for rendering
 vector<unsigned> render_f_SPHERE;              // List of faces for rendering
 
-//main data for rendering
-Object myObject;
-vector<Object> myObjects;
-
 Object platform;
-
 Object sphere;
 
 // render
@@ -120,7 +121,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 ///=========================================================================================///
 
 
-void calcPlaneMapping(void)
+void calcPlaneMapping(Object& myObject)
 {
   // Main loop iterates through the entire set of vertices.
   for(auto& vertex : myObject.vertices)
@@ -148,7 +149,7 @@ void calcPlaneMapping(void)
 }
 
 
-void calcCylindricalMapping(void)
+void calcCylindricalMapping(Object& myObject)
 { 
   for(auto& vertex : myObject.vertices)
   {
@@ -168,7 +169,7 @@ void calcCylindricalMapping(void)
 }
 
 
-void calcSphereMapping(void)
+void calcSphereMapping(Object& myObject)
 {
    for(auto& vertex : myObject.vertices)
    {
@@ -193,7 +194,7 @@ void calcSphereMapping(void)
    }
 }
 
-void calcUVMapping(void)
+void calcUVMapping(Object& myObject)
 {
     for(auto& vertex : myObject.vertices)
     {
@@ -696,13 +697,13 @@ unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsig
 ///=========================================================================================///
 ///                                      TEXTURE HANDLING
 ///=========================================================================================///
-bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, const char* path, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
 {
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load((path), &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -729,7 +730,7 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
     // -----------
 
     // Render projected texture in.
-    calcSphereMapping();
+    calcPlaneMapping(object);
     CreateRenderData(object, render_ver, render_f);
 
     // load data into vertex buffers
@@ -764,6 +765,49 @@ void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigne
 
         glBindVertexArray(0);
     }
+}
+
+
+
+///=========================================================================================///
+///                                      Audio Generation
+///=========================================================================================///
+void initOpenAL(void) {
+    ALCdevice* device = alcOpenDevice(NULL);
+    if (!device) {
+        std::cerr << "Failed to open OpenAL device\n";
+        return;
+    }
+
+    ALCcontext* context = alcCreateContext(device, NULL);
+    if (!context) {
+        std::cerr << "Failed to create OpenAL context\n";
+        alcCloseDevice(device);
+        return;
+    }
+
+    alcMakeContextCurrent(context);
+}
+
+void playSong(void)
+{
+    int channels, sampleRate;
+    short* output = stb_vorbis_decode_filename(SONG_PATH, &channels, &sampleRate);
+
+    ALuint buffer;
+    alGenBuffers(1, &buffer);
+
+    ALenum format = channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+    alBufferData(buffer, format, output, channels * sampleRate * sizeof(short), sampleRate);
+
+    ALuint source;
+    alGenSources(1, &source);
+    alSourcei(source, AL_BUFFER, buffer);
+    alSourcei(source, AL_LOOPING, AL_TRUE);
+
+    alSourcePlay(source);
+
+    free(output); // Free the decoded audio data
 }
 
 
@@ -826,6 +870,9 @@ int main()
     shader myShader;
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
+    // Initialize sound
+    initOpenAL();
+
     // PLATFORM
     LoadInput(platform, PLATFORM_PATH);
 
@@ -833,7 +880,7 @@ int main()
 
     unsigned int texture_p = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, VAO_P, VBO_P, EBO_P);
     
-    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
+    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, GLASS_TEXTURE, myShader, VAO_P, VBO_P, EBO_P);
     
     // SPHERE
     LoadInput(sphere, SPHERE_PATH);
@@ -842,7 +889,7 @@ int main()
 
     unsigned int texture_s = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
     
-    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_S, VBO_S, EBO_S);
+    loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, MELON_TEXTURE, myShader, VAO_S, VBO_S, EBO_S);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
@@ -865,6 +912,9 @@ int main()
     fruits->push_fruit(origin);
 
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
+    
+    playSong();
+    
     while (!glfwWindowShouldClose(window))
     {
 
@@ -1005,18 +1055,9 @@ int main()
         
         aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
         drawFruit(fruits->fruits, aColor, myShader, texture_s);
-        // glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
-        // glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
-        // glBindTexture(GL_TEXTURE_2D, texture_s);
 
-        // glBindVertexArray(VAO_S);
-
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
-
-        // glBindVertexArray(0);
-        
+        //
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
