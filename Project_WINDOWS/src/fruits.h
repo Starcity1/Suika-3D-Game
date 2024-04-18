@@ -43,7 +43,7 @@ void merge(vector<Fruit*>& fruits, int i, int curI, int& points);
 // Generating small Texture structure
 struct Texture
 {
-    const char * texture_path;
+    string texture_path;
     unsigned int id;
     int width;
     int height;
@@ -74,16 +74,16 @@ struct Fruit
         radius = 0;
         position = {0, 0, 0};
         mat = glm::scale(glm::mat4(1), glm::vec3(0.2));
-        texture = Texture();
+        texture.texture_path = "";
         velocity = {0, 0, 0};
     }
 
     // default constructor 
-    Fruit(float radius, glm::vec3 position, glm::vec3 velocity, Texture texture, glm::mat4 mat)
+    Fruit(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat)
     {
         this->radius = radius;
         this->position = position;
-        this->texture = texture;
+        this->texture.texture_path = texture;
         this->velocity = velocity;
         this->mat = mat;
     }
@@ -249,7 +249,7 @@ struct Coconut: Fruit
 
 struct Peach: Fruit
 {
-    string getTexture() override {return PEACH_TEXTURE;}
+    string getTexture() override {return WMELON_TEXTURE;}
 
     // base constructor
     Peach()
@@ -262,7 +262,7 @@ struct Peach: Fruit
         };
         radius = 1.4;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture.texture_path = PEACH_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -270,7 +270,7 @@ struct Peach: Fruit
     Peach(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.4;
-        this->texture.texture_path = PEACH_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -278,7 +278,7 @@ struct Peach: Fruit
 
 struct Apple: Fruit
 {
-    string getTexture() override {return APPLE_TEXTURE;}
+    string getTexture() override {return WMELON_TEXTURE;}
 
     // base constructor
     Apple()
@@ -291,7 +291,7 @@ struct Apple: Fruit
         };
         radius = 1.2;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture.texture_path = APPLE_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -299,7 +299,7 @@ struct Apple: Fruit
     Apple(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 1.2;
-        this->texture.texture_path = APPLE_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -307,7 +307,7 @@ struct Apple: Fruit
 
 struct Orange: Fruit
 {
-    string getTexture() override {return PEACH_TEXTURE;}
+    string getTexture() override {return WMELON_TEXTURE;}
 
     // base constructor
     Orange()
@@ -320,14 +320,14 @@ struct Orange: Fruit
         };
         radius = 1.0;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture.texture_path = PEACH_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
     // default constructor
     Orange(glm::vec3 velocity, glm::mat4 mat)
     {
-        this->radius = 0.6;
+        this->radius = 1.0;
         this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
@@ -394,7 +394,7 @@ struct Cherry: Fruit
 
 struct Blueberry: Fruit
 {
-    string getTexture() override {return BLUEBRRY_TEXTURE;}
+    string getTexture() override {return WMELON_TEXTURE;}
 
     // base constructor
     Blueberry()
@@ -407,7 +407,7 @@ struct Blueberry: Fruit
         };
         radius = 0.6;
         mat = glm::scale(tempMove, glm::vec3(radius));
-        texture.texture_path = BLUEBRRY_TEXTURE;
+        texture.texture_path = WMELON_TEXTURE;
         velocity = {0, -1, 0};
     }
 
@@ -415,7 +415,7 @@ struct Blueberry: Fruit
     Blueberry(glm::vec3 velocity, glm::mat4 mat)
     {
         this->radius = 0.6;
-        this->texture.texture_path = BLUEBRRY_TEXTURE;
+        this->texture.texture_path = WMELON_TEXTURE;
         this->mat = mat;
         this->velocity = velocity;
     }
@@ -433,7 +433,7 @@ class Fruits
         }
 
         // push_back function
-        void push_fruit(float radius, glm::vec3 position, glm::vec3 velocity, Texture texture, glm::mat4 mat) 
+        void push_fruit(float radius, glm::vec3 position, glm::vec3 velocity, string texture, glm::mat4 mat) 
         {
             fruits.push_back(new Fruit(radius, position, velocity, texture, mat));
         }
