@@ -26,8 +26,6 @@
 // Audio
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
-// #define STB_VORBIS_HEADER_ONLY
-// #include "stb_vorbis.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -145,68 +143,6 @@ void calcPlaneMapping(Object& myObject)
     vertex.t[1] = v;
   }
   
-}
-
-
-void calcCylindricalMapping(Object& myObject)
-{ 
-  for(auto& vertex : myObject.vertices)
-  {
-    float x = vertex.v[0];
-    float y = vertex.v[1];
-    float z = vertex.v[2];
-    
-    // Calculating angle
-
-    float theta = glm::atan(z, x);
-
-    // Assigning final values to texture mapping
-
-    vertex.t[0] = (PI + theta) / (2 * PI);
-    vertex.t[1] = y + 0.5;
-  }  
-}
-
-
-void calcSphereMapping(Object& myObject)
-{
-   for(auto& vertex : myObject.vertices)
-   {
-        float x = vertex.v[0];
-        float y = vertex.v[1];
-        float z = vertex.v[2];
-
-        // Calculating angles
-        float rho = glm::sqrt(
-            glm::pow(x, 2) +
-            glm::pow(y, 2) +
-            glm::pow(z, 2)
-        );
-        float theta = glm::atan(z,x);
-        float phi = glm::atan(y, rho);
-
-        // Assigning final values to texture mapping
-
-        vertex.t[0] = (PI + theta) / (2 * PI);
-        vertex.t[1] = phi / PI;
-
-   }
-}
-
-void calcUVMapping(Object& myObject)
-{
-    for(auto& vertex : myObject.vertices)
-    {
-        float dx = vertex.v[0];
-        float dy = vertex.v[1];
-        float dz = vertex.v[2];
-
-        float u = 0.5f - glm::atan(dz, dx) / (2 * PI);
-        float v = 0.5 + glm::acos(dy) / PI;
-
-        vertex.t[0] = u;
-        vertex.t[1] = v;
-    }
 }
 
 void newGravity(Fruits fruits, float current_frame)
@@ -788,44 +724,78 @@ void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader)
 ///=========================================================================================///
 ///                                      Audio Generation
 ///=========================================================================================///
-void initOpenAL(void) {
-    ALCdevice* device = alcOpenDevice(NULL);
+
+// Function to initialize OpenAL
+ALCdevice* initOpenAL() {
+    ALCdevice* device = alcOpenDevice(nullptr);
     if (!device) {
-        std::cerr << "Failed to open OpenAL device\n";
-        return;
+        std::cerr << "Failed to open OpenAL device" << std::endl;
+        return nullptr;
     }
 
-    ALCcontext* context = alcCreateContext(device, NULL);
+    ALCcontext* context = alcCreateContext(device, nullptr);
     if (!context) {
-        std::cerr << "Failed to create OpenAL context\n";
+        std::cerr << "Failed to create OpenAL context" << std::endl;
         alcCloseDevice(device);
-        return;
+        return nullptr;
     }
 
     alcMakeContextCurrent(context);
+    return device;
 }
 
-// void playSong(void)
-// {
-//     int channels, sampleRate;
-//     short* output = stb_vorbis_decode_filename(SONG_PATH, &channels, &sampleRate);
+// Function to load and play a song
+void playSong(void) {
+    std::ifstream file(SONG_PATH, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << SONG_PATH << std::endl;
+        return;
+    }
 
-//     ALuint buffer;
-//     alGenBuffers(1, &buffer);
+    // Read WAV header
+    char header[44];
+    file.read(header, 44);
 
-//     ALenum format = channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-//     alBufferData(buffer, format, output, channels * sampleRate * sizeof(short), sampleRate);
+    int channels = header[22] + (header[23] << 8);
+    int sampleRate = header[24] + (header[25] << 8) + (header[26] << 16) + (header[27] << 24);
+    int bitsPerSample = header[34] + (header[35] << 8);
 
-//     ALuint source;
-//     alGenSources(1, &source);
-//     alSourcei(source, AL_BUFFER, buffer);
-//     alSourcei(source, AL_LOOPING, AL_TRUE);
+    ALenum format;
+    if (channels == 1 && bitsPerSample == 8) {
+        format = AL_FORMAT_MONO8;
+    } else if (channels == 1 && bitsPerSample == 16) {
+        format = AL_FORMAT_MONO16;
+    } else if (channels == 2 && bitsPerSample == 8) {
+        format = AL_FORMAT_STEREO8;
+    } else if (channels == 2 && bitsPerSample == 16) {
+        format = AL_FORMAT_STEREO16;
+    } else {
+        std::cerr << "Unsupported format" << std::endl;
+        return;
+    }
 
-//     alSourcePlay(source);
+    // Read audio data
+    std::vector<char> buffer(std::istreambuf_iterator<char>(file), {});
 
-//     free(output); // Free the decoded audio data
-// }
+    // Generate OpenAL buffer and source
+    ALuint bufferID, sourceID;
+    alGenBuffers(1, &bufferID);
+    alBufferData(bufferID, format, buffer.data(), buffer.size(), sampleRate);
+    alGenSources(1, &sourceID);
+    alSourcei(sourceID, AL_BUFFER, bufferID);
+    alSourcei(sourceID, AL_LOOPING, AL_TRUE);
 
+    // Play the song
+    alSourcePlay(sourceID);
+}
+
+// Function to clean up OpenAL
+void cleanupOpenAL(ALCdevice* device) {
+    ALCcontext* context = alcGetCurrentContext();
+    alcMakeContextCurrent(nullptr);
+    alcDestroyContext(context);
+    alcCloseDevice(device);
+}
 
 ///=========================================================================================///
 ///                                      Main Function
@@ -859,12 +829,6 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetKeyCallback(window, key_callback);
-    // Sets mouse_button_callback() function as handler when mouse press event happens.
-    // glfwSetMouseButtonCallback(window, mouse_button_callback);
-    // Sets cursor_pos_callback() function as handler when press event happens.
-    // glfwSetCursorPosCallback(window, cursor_pos_callback);
-    // Sets scroll_callback() function as handler when scroll event happens.
-    // glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture the mouse
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -887,8 +851,11 @@ int main()
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
     // Initialize sound
-    initOpenAL();
-
+    ALCdevice* device = initOpenAL();
+    if (!device) {
+        glfwTerminate();
+        return -1;
+    }
 
     // PLATFORM
     LoadInput(platform, PLATFORM_PATH);
@@ -928,7 +895,10 @@ int main()
     // fruits->push_fruit(wa1);
     fruits->push_fruit(origin);
 
-    modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
+    modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));
+
+    bool failure = false;
+    bool freezeframe = false;    
     
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -937,10 +907,20 @@ int main()
     float alphaValue = 0.2f;
     glUniform1f(alpha_loaction, alphaValue);
 
-    // playSong();
+    playSong();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
     
     while (!glfwWindowShouldClose(window))
     {
+
+        if (freezeframe) {
+            processInput(window);
+            glfwPollEvents();
+            continue;
+        }
 
         float time = glfwGetTime();
         frameTime = time;
@@ -1047,10 +1027,20 @@ int main()
         newGravity(*fruits, current_frame);
 
         // Clear the buffer
-        glClearColor(0.85f, 0.85f, 0.85f, 0.25f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        failure = fruits->velToMatrixFruits(current_frame * 1.0f, points);
+        
+        if (failure) {
+            // cout << "this work first try?" << endl;
+            freezeframe = true;
+            glClearColor(1.0f, 0.0f, 0.0f, 0.5f); // load red
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // break;
+        }
+        else {
+            // load grey
+            glClearColor(0.92f , 0.83f , 0.77f , 1.0f);;
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
 
 
         // view/projection transformations
@@ -1061,8 +1051,12 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "projection"), 1, GL_FALSE, &projection[0][0]);
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "view"), 1, GL_FALSE, &view[0][0]);
 
-        // render the loaded model
         glm::vec3 aColor = glm::vec3 (0.9f, 0.9f, 0.9f);
+        // start of attempting sphere
+        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
+        drawFruit(fruits->fruits, aColor, myShader);
+
+        // render the loaded model
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
         glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
@@ -1071,17 +1065,11 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture_p); 
         glBindVertexArray(VAO_P);
         glUniform4f(glGetUniformLocation(myShader.ID, "aColor"), 1.0f, 1.0f, 1.0f, 0.2f);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         // Draw platform
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_PLATFORM.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
-
-        // start of attempting sphere
-        aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
-        drawFruit(fruits->fruits, aColor, myShader);
 
 
         //
@@ -1091,13 +1079,8 @@ int main()
         glfwPollEvents();
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    // glDeleteVertexArrays(1, &VAO);
-    // glDeleteBuffers(1, &VBO);
-    // glDeleteProgram(myShader.ID);
-
     // glfw: terminate, clearing all previously allocated GLFW resources.
+    cleanupOpenAL(device);
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;

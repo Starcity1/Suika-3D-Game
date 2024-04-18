@@ -96,7 +96,7 @@ struct Color
 {
   private:
 
-    float data[3];
+    float data[4];
 
   public:
   
@@ -104,14 +104,16 @@ struct Color
     {
         data[0] =
         data[1] =
-        data[2] = 0.f;
+        data[2] = 0.0f;
+        data[3] = 1.0f;
     }
 
-    Color(float r, float g, float b)
+    Color(float r, float g, float b, float a)
     {
         data[0] = r;
         data[1] = g;
         data[2] = b;
+        data[3] = a;
     }
 
     float &operator [](unsigned int idx)
