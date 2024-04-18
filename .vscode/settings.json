@@ -14,6 +14,7 @@
     "cmath": "cpp",
     "iostream": "cpp",
     "utility": "cpp",
-    "forward_list": "cpp"
+    "forward_list": "cpp",
+    "sstream": "cpp"
   }
 }

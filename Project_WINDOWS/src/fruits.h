@@ -35,6 +35,7 @@
 #define PLATFORM_UP -1.45
 #define PLATFORM_DOWN 1.45
 #define RADIUS_SCALE 0.5
+#define PLATFORM_TOP 1
 
 using namespace std;
 struct Fruit;
@@ -82,8 +83,8 @@ struct Fruit
     bool GJK(vector<Fruit*>& fruits, Fruit& fruit, glm::vec4& temp, int i, int curI, int& points) {
         float distToReal = sqrt(pow(fruit.mat[3][0] - mat[3][0], 2) + pow(fruit.mat[3][1] - mat[3][1], 2) + pow(fruit.mat[3][2] - mat[3][2], 2));
         if (distToReal <= radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE) {
-            cout << "distToReal: " << distToReal << endl;
-            cout << "radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE" << radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE << endl;
+            // cout << "distToReal: " << distToReal << endl;
+            // cout << "radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE" << radius * RADIUS_SCALE + fruit.radius * RADIUS_SCALE << endl;
             glm::vec4 dir = glm::vec4(fruit.mat[3][0] - mat[3][0], fruit.mat[3][1] - mat[3][1], fruit.mat[3][2] - mat[3][2], 0);
             mat[3] = mat[3] - dir * 0.001f;
             fruit.mat[3] = fruit.mat[3] + dir * 0.001f;
@@ -124,7 +125,7 @@ struct Fruit
         return false;
     }
     // handles movement
-    void velToMatrix(float current_frame, vector<Fruit*>& fruits, int curI, int& points) {
+    bool velToMatrix(float current_frame, vector<Fruit*>& fruits, int curI, int& points) {
         float threshold = 0.1;
         glm::vec4 temp = mat[3] + glm::vec4(velocity[0], velocity[1], velocity[2], 0) * current_frame;
         float velModifier = -0.5;
@@ -138,7 +139,7 @@ struct Fruit
         }
         beingErased = false;
         if (didTouch) {
-            return;
+            return false;
         }
         if (temp[1] >= PLATFORM_BOT + radius * RADIUS_SCALE) {
             mat[3][1] = temp[1];
@@ -174,6 +175,11 @@ struct Fruit
                 mat[3][2] = PLATFORM_DOWN - radius * RADIUS_SCALE;
             }
         }
+        if ((temp[1]) >= PLATFORM_TOP) {
+            cout << "YOU SUCK!!!: " << endl;
+            return true;    
+        }
+        return false;
     }
 };
 
@@ -402,10 +408,15 @@ class Fruits
         }
 
         // Mat Manipulator
-        void velToMatrixFruits(float current_frame, int& points) {
+        bool velToMatrixFruits(float current_frame, int& points) {
+            bool failure = false;
             for (int i = 0; i < fruits.size() - 1; i++) {
-                fruits[i]->velToMatrix(current_frame, fruits, i, points);
+                failure = fruits[i]->velToMatrix(current_frame, fruits, i, points);
+                if (failure) {
+                    return true;
+                }
             }
+            return false;
         }
 };
 

@@ -120,7 +120,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 ///=========================================================================================///
 
 
-void calcPlaneMapping(void)
+void calcPlaneMapping(Object& myObject)
 {
   // Main loop iterates through the entire set of vertices.
   for(auto& vertex : myObject.vertices)
@@ -739,13 +739,13 @@ unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsig
 ///=========================================================================================///
 ///                                      TEXTURE HANDLING
 ///=========================================================================================///
-bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, const char* texture, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
 {
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load((texture), &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -772,7 +772,8 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
     // -----------
 
     // Render projected texture in.
-    calcSphereMapping();
+    // calcSphereMapping();
+    calcPlaneMapping(object);
     CreateRenderData(object, render_ver, render_f);
 
     // load data into vertex buffers
@@ -875,7 +876,7 @@ int main()
 
     unsigned int texture_p = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, VAO_P, VBO_P, EBO_P);
     
-    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
+    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, GLASS_TEXTURE, myShader, VAO_P, VBO_P, EBO_P);
     
     // SPHERE
     LoadInput(sphere, SPHERE_PATH);
@@ -884,7 +885,7 @@ int main()
 
     unsigned int texture_s = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
     
-    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_S, VBO_S, EBO_S);
+    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, MELON_TEXTURE, myShader, VAO_S, VBO_S, EBO_S);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
@@ -907,9 +908,13 @@ int main()
     fruits->push_fruit(origin);
 
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
+    bool failure = false;
+    bool freezeframe = false;
     while (!glfwWindowShouldClose(window))
     {
-
+        if (freezeframe) {
+            continue;
+        }
         float time = glfwGetTime();
         frameTime = time;
         float current_frame = frameTime - prevFrame;
@@ -1002,16 +1007,26 @@ int main()
             }
         }
         
-        fruits->velToMatrixFruits(current_frame * 1.0f, points);
-
-
         newGravity(*fruits, current_frame);
 
-        // Clear the buffer
-        glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        failure = fruits->velToMatrixFruits(current_frame * 1.0f, points);
+        
+        if (failure) {
+            // cout << "this work first try?" << endl;
+            freezeframe = true;
+            glClearColor(1.0f, 0.0f, 0.0f, 0.5f); // load red
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            // break;
+        }
+        else {
+            // load grey
+            glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
 
 
         // view/projection transformations
