@@ -15,6 +15,8 @@
     "iostream": "cpp",
     "utility": "cpp",
     "forward_list": "cpp",
-    "cstdlib": "cpp"
+    "cstdlib": "cpp",
+    "__node_handle": "cpp",
+    "string": "cpp"
   }
 }

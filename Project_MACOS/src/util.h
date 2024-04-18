@@ -9,6 +9,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <glm/glm.hpp>
+
 
 // Texture paths.
 #define PATH ".."
@@ -24,6 +26,13 @@
 #define MELON_TEXTURE       "../Blenders/melon.png"
 #define PEACH_TEXTURE       "../Blenders/peach.png"
 #define WMELON_TEXTURE      "../Blenders/watermelon.png"
+
+struct ShaderVertex {
+    glm::vec3 position;
+    glm::vec3 normal;
+    glm::vec2 texCoord;
+    float alpha;
+};
 
 // Physicial values
 #define GRAVITY_ACCELERATION -.91f

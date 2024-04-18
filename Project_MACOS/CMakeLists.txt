@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 2.8)
-cmake_policy(VERSION 2.8)
+cmake_minimum_required (VERSION 3.5)
+cmake_policy(VERSION 3.5)
 
 project (Project)
 
@@ -29,7 +29,6 @@ include_directories(${CMAKE_SOURCE_DIR}/includes)
 
 add_executable(Project src/main.cpp)
 target_link_libraries(Project OpenAL::OpenAL)
-target_link_libraries(Project PRIVATE glfw)
+target_link_libraries(Project glfw)
 target_link_libraries(Project ${LIBS})
-target_link_libraries(Project ${OPENAL_INCLUDE_DIR})
 target_link_libraries(Project ${GLFW3_LIBRARY})

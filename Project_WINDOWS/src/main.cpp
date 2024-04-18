@@ -23,6 +23,12 @@
 
 #include <cstdlib>
 
+// Audio
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+// #define STB_VORBIS_HEADER_ONLY
+// #include "stb_vorbis.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -88,17 +94,11 @@ vector<unsigned> render_f_PLATFORM;              // List of faces for rendering
 vector<float> render_ver_nor_tex_SPHERE;       // List of points and normals for rendering
 vector<unsigned> render_f_SPHERE;              // List of faces for rendering
 
-//main data for rendering
-Object myObject;
-vector<Object> myObjects;
-
 Object platform;
-
 Object sphere;
 
 // render
 unsigned int VBO_P, VAO_P, EBO_P;
-unsigned int VBO_S, VAO_S, EBO_S;
 
 // declaration
 void RotateModel(float angle, glm::vec3 axis);
@@ -120,7 +120,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 ///=========================================================================================///
 
 
-void calcPlaneMapping(void)
+void calcPlaneMapping(Object& myObject)
 {
   // Main loop iterates through the entire set of vertices.
   for(auto& vertex : myObject.vertices)
@@ -148,7 +148,7 @@ void calcPlaneMapping(void)
 }
 
 
-void calcCylindricalMapping(void)
+void calcCylindricalMapping(Object& myObject)
 { 
   for(auto& vertex : myObject.vertices)
   {
@@ -168,7 +168,7 @@ void calcCylindricalMapping(void)
 }
 
 
-void calcSphereMapping(void)
+void calcSphereMapping(Object& myObject)
 {
    for(auto& vertex : myObject.vertices)
    {
@@ -193,7 +193,7 @@ void calcSphereMapping(void)
    }
 }
 
-void calcUVMapping(void)
+void calcUVMapping(Object& myObject)
 {
     for(auto& vertex : myObject.vertices)
     {
@@ -458,7 +458,7 @@ int LoadInput(Object& object, string filename)
 }
 
 //TODO: Modify function such that ALL objects can be
-bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned>& render_f)
+bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, float alpha)
 {
     if (0 == object.vertices.size())
     {
@@ -483,6 +483,8 @@ bool CreateRenderData(Object& object, vector<float>& render_ver, vector<unsigned
 
             render_ver.push_back(object.vertices[i].t[0]);
             render_ver.push_back(object.vertices[i].t[1]);
+
+            render_ver.push_back(alpha);
         }
 
         for (int j = 0; j < object.faces.size(); ++j) 
@@ -649,6 +651,23 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 ///=========================================================================================///
 ///                                      RENDER GLFW BINDING
 ///=========================================================================================///
+unsigned int bindTexture(void)
+{
+    // load and create a texture
+    // -------------------------
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    return texture;
+}
+
 unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO) 
 {
     // create buffers/arrays for surface
@@ -665,44 +684,38 @@ unsigned int renderstuff(Object& object, vector<float>& render_ver, vector<unsig
 
     // set the vertex attribute pointers
     // vertex Positions
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(ShaderVertex), (void*)offsetof(ShaderVertex, position));
     glEnableVertexAttribArray(0);
 
     // vertex normals
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), ((void*)(3* sizeof(float))));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ShaderVertex), (void*)offsetof(ShaderVertex, normal));
     glEnableVertexAttribArray(1);
 
     // vertex texture coordinate
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(ShaderVertex), (void*)offsetof(ShaderVertex, texCoord));
     glEnableVertexAttribArray(2);
+
+    // Alpha value per vertex
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(ShaderVertex), (void*)offsetof(ShaderVertex, alpha));
+    glEnableVertexAttribArray(3);
+    
 
     glBindVertexArray(0);
 
-    // load and create a texture
-    // -------------------------
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    return texture;
+    return bindTexture();
 }
+
 
 ///=========================================================================================///
 ///                                      TEXTURE HANDLING
 ///=========================================================================================///
-bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
+bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& render_f, shader& myShader, const char* path, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO, float alpha)
 {
     // load image, create texture and generate mipmaps
     int width, height, nrChannels;
     // Change back to ../data/textures.png
     // "../Blenders/texture_wood.png"
-    unsigned char *data = stbi_load((GLASS_TEXTURE), &width, &height, &nrChannels, 0);
+    unsigned char *data = stbi_load((path), &width, &height, &nrChannels, 0);
     if (data)
     {
         // Adding error handling in case texture is not loaded properly.
@@ -722,15 +735,11 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
     }
     stbi_image_free(data);
 
-    // render mesh
     myShader.use();
 
-    // render loop
-    // -----------
-
     // Render projected texture in.
-    calcSphereMapping();
-    CreateRenderData(object, render_ver, render_f);
+    calcPlaneMapping(object);
+    CreateRenderData(object, render_ver, render_f, alpha);
 
     // load data into vertex buffers
     glBindVertexArray(VAO);
@@ -744,7 +753,7 @@ bool loadTexture(Object& object, vector<float>& render_ver, vector<unsigned>& re
 ///                                   Draw Fruit Function
 ///=========================================================================================///
 
-void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigned int texture_s) 
+void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader) 
 {
     for (int i = 0; i < fruits.size(); i++)
     {
@@ -753,11 +762,19 @@ void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigne
         aColor = glm::vec3 (0.9f, 0.9f, 0.9f);    
 
         glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &tempMatrix[0][0]);
-        glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
 
-        glBindTexture(GL_TEXTURE_2D, texture_s);
+        if(fruits[i]->merged)
+        {
+            fruits[i]->merged = false;
 
-        glBindVertexArray(VAO_S);
+            fruits[i]->texture.id = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, fruits[i]->VAO, fruits[i]->VBO, fruits[i]->EBO);
+            
+            loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, fruits[i]->texture.texture_path.c_str(), fruits[i]->VAO, fruits[i]->VBO, fruits[i]->EBO, 1.0f);
+        }
+
+        glBindTexture(GL_TEXTURE_2D, fruits[i]->texture.id);
+
+        glBindVertexArray(fruits[i]->VAO);
 
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
@@ -765,6 +782,49 @@ void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader, unsigne
         glBindVertexArray(0);
     }
 }
+
+
+
+///=========================================================================================///
+///                                      Audio Generation
+///=========================================================================================///
+void initOpenAL(void) {
+    ALCdevice* device = alcOpenDevice(NULL);
+    if (!device) {
+        std::cerr << "Failed to open OpenAL device\n";
+        return;
+    }
+
+    ALCcontext* context = alcCreateContext(device, NULL);
+    if (!context) {
+        std::cerr << "Failed to create OpenAL context\n";
+        alcCloseDevice(device);
+        return;
+    }
+
+    alcMakeContextCurrent(context);
+}
+
+// void playSong(void)
+// {
+//     int channels, sampleRate;
+//     short* output = stb_vorbis_decode_filename(SONG_PATH, &channels, &sampleRate);
+
+//     ALuint buffer;
+//     alGenBuffers(1, &buffer);
+
+//     ALenum format = channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+//     alBufferData(buffer, format, output, channels * sampleRate * sizeof(short), sampleRate);
+
+//     ALuint source;
+//     alGenSources(1, &source);
+//     alSourcei(source, AL_BUFFER, buffer);
+//     alSourcei(source, AL_LOOPING, AL_TRUE);
+
+//     alSourcePlay(source);
+
+//     free(output); // Free the decoded audio data
+// }
 
 
 ///=========================================================================================///
@@ -826,23 +886,29 @@ int main()
     shader myShader;
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
+    // Initialize sound
+    initOpenAL();
+
+
     // PLATFORM
     LoadInput(platform, PLATFORM_PATH);
 
-    CreateRenderData(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM);
+    CreateRenderData(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, 0.5f);
 
     unsigned int texture_p = renderstuff(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, VAO_P, VBO_P, EBO_P);
     
-    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_P, VBO_P, EBO_P);
+    loadTexture(platform, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, GLASS_TEXTURE, VAO_P, VBO_P, EBO_P, 0.3f);
     
     // SPHERE
+    Blueberry* origin = new Blueberry();
+    
     LoadInput(sphere, SPHERE_PATH);
 
-    CreateRenderData(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
+    CreateRenderData(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, 1.0f);
 
-    unsigned int texture_s = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, VAO_S, VBO_S, EBO_S);
+    origin->texture.id = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, origin->VAO, origin->VBO, origin->EBO);
     
-    loadTexture(sphere, render_ver_nor_tex_PLATFORM, render_f_PLATFORM, myShader, VAO_S, VBO_S, EBO_S);
+    loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, origin->texture.texture_path.c_str(), origin->VAO, origin->VBO, origin->EBO, 1.0f);
 
     // Update camera's position to a 45deg angle in a unit circle.
     camera_position = (3.0f * glm::vec3(glm::cos(glm::radians(camera_angle)), 1.0f, glm::sin(glm::radians(camera_angle))));
@@ -859,12 +925,20 @@ int main()
         0, 1, 0, 1,
     };
     
-    
-    Blueberry* origin = new Blueberry();
     // fruits->push_fruit(wa1);
     fruits->push_fruit(origin);
 
     modelMatrix = glm::scale(modelMatrix, glm::vec3(3, 3, 3));    
+    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    GLint alpha_loaction = glGetUniformLocation(myShader.ID, "alpha");
+
+    float alphaValue = 0.2f;
+    glUniform1f(alpha_loaction, alphaValue);
+
+    // playSong();
+    
     while (!glfwWindowShouldClose(window))
     {
 
@@ -900,7 +974,13 @@ int main()
                     fruits->push_fruit(new Lime());
                 }
                 points += fruits->fruits[fruits->fruits.size() - 2]->radius * 10;
-                
+
+                auto new_fruit = fruits->fruits.back();
+    
+                new_fruit->texture.id = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, new_fruit->VAO, new_fruit->VBO, new_fruit->EBO);
+
+                loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, new_fruit->texture.texture_path.c_str(), new_fruit->VAO, new_fruit->VBO, new_fruit->EBO, 1.0f);
+
                 pair.second = "";
                 cout << "Points: " << points << endl;
             }
@@ -967,7 +1047,7 @@ int main()
         newGravity(*fruits, current_frame);
 
         // Clear the buffer
-        glClearColor(0.85f, 0.85f, 0.85f, 0.5f);
+        glClearColor(0.85f, 0.85f, 0.85f, 0.25f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -989,34 +1069,22 @@ int main()
         // bind Texture
         // PLATFORM
         glBindTexture(GL_TEXTURE_2D, texture_p); 
-
         glBindVertexArray(VAO_P);
+        glUniform4f(glGetUniformLocation(myShader.ID, "aColor"), 1.0f, 1.0f, 1.0f, 0.2f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        
+        // Draw platform
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glDrawElements(GL_TRIANGLES, render_f_PLATFORM.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         // start of attempting sphere
-        
-        // texture = renderstuff(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE);
-
-        // loadTexture(sphere, render_ver_nor_tex_SPHERE, render_f_SPHERE, myShader, VAO_S, VBO_S, EBO_S);
-        
         aColor = glm::vec3 (0.9f, 0.9f, 0.9f);        
-        drawFruit(fruits->fruits, aColor, myShader, texture_s);
-        // glUniformMatrix4fv(glGetUniformLocation(myShader.ID, "model"), 1, GL_FALSE, &modelMatrix[0][0]);
-        // glUniform3fv(glGetUniformLocation(myShader.ID, "aColor"), 1, &aColor[0]);
+        drawFruit(fruits->fruits, aColor, myShader);
 
-        // glBindTexture(GL_TEXTURE_2D, texture_s);
 
-        // glBindVertexArray(VAO_S);
-
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        // glDrawElements(GL_TRIANGLES, render_f_SPHERE.size(), GL_UNSIGNED_INT, 0);
-
-        // glBindVertexArray(0);
-        
+        //
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
