@@ -23,10 +23,6 @@
 
 #include <cstdlib>
 
-// Audio
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -722,82 +718,6 @@ void drawFruit(vector<Fruit*> fruits, glm::vec3 aColor, shader myShader)
 
 
 ///=========================================================================================///
-///                                      Audio Generation
-///=========================================================================================///
-
-// Function to initialize OpenAL
-ALCdevice* initOpenAL() {
-    ALCdevice* device = alcOpenDevice(nullptr);
-    if (!device) {
-        std::cerr << "Failed to open OpenAL device" << std::endl;
-        return nullptr;
-    }
-
-    ALCcontext* context = alcCreateContext(device, nullptr);
-    if (!context) {
-        std::cerr << "Failed to create OpenAL context" << std::endl;
-        alcCloseDevice(device);
-        return nullptr;
-    }
-
-    alcMakeContextCurrent(context);
-    return device;
-}
-
-// Function to load and play a song
-void playSong(void) {
-    std::ifstream file(SONG_PATH, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << SONG_PATH << std::endl;
-        return;
-    }
-
-    // Read WAV header
-    char header[44];
-    file.read(header, 44);
-
-    int channels = header[22] + (header[23] << 8);
-    int sampleRate = header[24] + (header[25] << 8) + (header[26] << 16) + (header[27] << 24);
-    int bitsPerSample = header[34] + (header[35] << 8);
-
-    ALenum format;
-    if (channels == 1 && bitsPerSample == 8) {
-        format = AL_FORMAT_MONO8;
-    } else if (channels == 1 && bitsPerSample == 16) {
-        format = AL_FORMAT_MONO16;
-    } else if (channels == 2 && bitsPerSample == 8) {
-        format = AL_FORMAT_STEREO8;
-    } else if (channels == 2 && bitsPerSample == 16) {
-        format = AL_FORMAT_STEREO16;
-    } else {
-        std::cerr << "Unsupported format" << std::endl;
-        return;
-    }
-
-    // Read audio data
-    std::vector<char> buffer(std::istreambuf_iterator<char>(file), {});
-
-    // Generate OpenAL buffer and source
-    ALuint bufferID, sourceID;
-    alGenBuffers(1, &bufferID);
-    alBufferData(bufferID, format, buffer.data(), buffer.size(), sampleRate);
-    alGenSources(1, &sourceID);
-    alSourcei(sourceID, AL_BUFFER, bufferID);
-    alSourcei(sourceID, AL_LOOPING, AL_TRUE);
-
-    // Play the song
-    alSourcePlay(sourceID);
-}
-
-// Function to clean up OpenAL
-void cleanupOpenAL(ALCdevice* device) {
-    ALCcontext* context = alcGetCurrentContext();
-    alcMakeContextCurrent(nullptr);
-    alcDestroyContext(context);
-    alcCloseDevice(device);
-}
-
-///=========================================================================================///
 ///                                      Main Function
 ///=========================================================================================///
 
@@ -850,12 +770,6 @@ int main()
     shader myShader;
     myShader.setUpShader(vertexShaderSource,fragmentShaderSource);
 
-    // Initialize sound
-    ALCdevice* device = initOpenAL();
-    if (!device) {
-        glfwTerminate();
-        return -1;
-    }
 
     // PLATFORM
     LoadInput(platform, PLATFORM_PATH);
@@ -907,7 +821,6 @@ int main()
     float alphaValue = 0.2f;
     glUniform1f(alpha_loaction, alphaValue);
 
-    playSong();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -992,7 +905,7 @@ int main()
                     camera_position += _CAMERA_MOVE_SPEED * backward;
                     camera_rad = glm::distance(glm::vec2(0.0f), glm::vec2(camera_position[0], camera_position[2]));
                 }
-                float ballSpeed = 0.01;
+                float ballSpeed = 0.001;
                 float extraSpace = 0.05;
                 Fruit* curFruit = fruits->fruits[fruits->fruits.size() - 1]; 
                 if (key == GLFW_KEY_LEFT)
@@ -1080,7 +993,6 @@ int main()
     }
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
-    cleanupOpenAL(device);
     // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
